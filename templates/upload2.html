@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Tag Field</title>
+        <style>
+        .tag-container {
+            display: flex;
+            flex-wrap: wrap;
+            margin-bottom: 10px;
+        }
+
+        .tag {
+            background-color: #4caf50;
+            color: #fff;
+            padding: 8px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            margin-right: 8px;
+            transition: background-color 0.3s;
+        }
+
+        .tag:hover {
+            background-color: #45a049; /* darker green on hover */
+        }
+
+        .tag-remove {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #ff5252; /* Red background color */
+            color: #fff;
+            border-radius: 50%;
+            cursor: pointer;
+            margin-left: 4px;
+            width: 20px;
+            height: 20px;
+            font-size: 12px;
+        }
+
+        .tag-remove:hover {
+            background-color: #ff0000; /* darker red on hover */
+        }
+
+        input {
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 16px;
+            margin-bottom: 5px; /* Add margin for separation */
+        }
+
+        #charCount {
+            font-size: 14px;
+            color: #666;
+        }
+    </style>
+    </head>
+    <body>
+        <div class="tag-container" id="tagContainer"></div>
+        <input class="form-control" type="text" id="tagInput"
+            placeholder="Add tags...">
+        <span id="charCount">Character count: 0</span>
+
+        <script>
+        const tagContainer = document.getElementById('tagContainer');
+        const tagInput = document.getElementById('tagInput');
+        const charCount = document.getElementById('charCount');
+        const tags = [];
+
+        tagInput.addEventListener('input', function() {
+            const tagValue = tagInput.value.trim();
+            const size = tagValue.length;
+            charCount.textContent = `Character count: ${size}`;
+        });
+
+        tagInput.addEventListener('keydown', function(event) {
+            if (event.key === 'Enter' || event.key === ',') {
+                event.preventDefault();
+
+                const tagValue = tagInput.value.trim();
+                if (tagValue) {
+                    addTag(tagValue);
+                    tagInput.value = '';
+                }
+            }
+        });
+
+        function addTag(tagValue) {
+            const tagElement = document.createElement('div');
+            tagElement.classList.add('tag');
+            tagElement.textContent = tagValue;
+
+            const removeButton = document.createElement('span');
+            removeButton.textContent = '✕';
+            removeButton.classList.add('tag-remove');
+            removeButton.addEventListener('click', function() {
+                const tagText = tagElement.firstChild.textContent;
+                tagContainer.removeChild(tagElement);
+                tags.splice(tags.indexOf(tagText), 1);
+                updateTagContainer();
+            });
+
+            tagElement.appendChild(removeButton);
+            tags.push(tagValue);
+            updateTagContainer();
+        }
+
+        function updateTagContainer() {
+            tagContainer.innerHTML = '';
+            tags.forEach(tagValue => {
+                const tagElement = document.createElement('div');
+                tagElement.classList.add('tag');
+                tagElement.textContent = tagValue;
+
+                const removeButton = document.createElement('span');
+                removeButton.textContent = '✕';
+                removeButton.classList.add('tag-remove');
+                removeButton.addEventListener('click', function() {
+                    const tagText = tagElement.firstChild.textContent;
+                    tagContainer.removeChild(tagElement);
+                    tags.splice(tags.indexOf(tagText), 1);
+                    updateTagContainer();
+                });
+
+                tagElement.appendChild(removeButton);
+                tagContainer.appendChild(tagElement);
+            });
+        }
+    </script>
+    </body>
+</html>
