@@ -11,12 +11,14 @@ var VIDEO_PATH2 = "C:\\Users\\AKumar22\\Desktop\\StudyContents\\GoLang\\YoutubeC
 var AUTH_MODE = "API_TOKEN"
 var ROOT_URL string = "https://www.googleapis.com"
 var OBJECT_URL = "https://storage.cloud.google.com/ytc-media-storage/pets_dog.mp4"
+var UPLOAD_END_POINT = "upload/youtube/v3/videos"
 
 var UTUBE_END_ENDPOINT string = "/youtube/v3/SampleVideo"
-var UPLOAD_ENDPOINT string = "?part=snippet%2Cstatus"
+
+// var UPLOAD_ENDPOINT string = "?part=snippet%2Cstatus"
 var API_Key string = "AIzaSyC_5hvxTsU8vijTreOE5zrwAws9XnCH6is"
 var OAUTH_TOKEN string = "ya29.a0AfB_byDtDOdgo7Dzc_Pg-URblTXa3VSB5j-KAzkFyvmcO3u9PcCA-t3-8mN21irBWaKnUy9Lh444iZorST4x_uj-f0UnrY8lvUunI7vT8bDhnp3mLw0JhQWzJZ0H2FzVr1e8pnwgUcQRnC9GvmRtmgGWIGngg-QnwsAaCgYKAQYSARESFQHGX2MiX1UfikBfsVQooD-4dNVW5g0170"
-var OAUTH_TOKEN_KR8799 string = "ya29.a0AfB_byBMk6eZe_SjDYO0muWbPey-dBKQFEAgtuCCNeereZJqSgPVGnaC5MmGnY-MbcQUHxHlavHSdb7vVCAs0Sbo1wFhby5JTOHGvPfHESjsWuzBLaIlPbE1rO61Mx6VgG6ZMdeUJjSJ5xoJ1Ab7Jawxn16p0ITQzgaCgYKAWgSARASFQHGX2MioTZYwjyS0g2tAsNM20M-qA0169"
+var OAUTH_TOKEN_KR8799 string = "ya29.a0AfB_byC1uPyVDG3H6feJhhyfw3vdfsMbNw16X7ve2Z-EIyfmUtJPSLsL6F_Lgo_3yLCQInzKDyhhHmWhPC2cj226xRHjczTq58MjAfE9T6e_oY1s2BtVsp3gQXE5pw1hzZmhznw_A6MU9PJLUDKReuKPcUX0ZtyhGgaCgYKATkSARESFQHGX2MiPeoz-mT7n8b9pZa6jTKfew0169"
 var OAUTH_TOKEN_KR4DRI string = "ya29.a0AfB_byAMUjYzuFfeSjAOttAq9bsmkGldvKgjHVv5eJIQtkbfeCGyHY707MQAifHoPTpdB9HBuA_rKcEUbTaScEPMHPUz2sV2hndGAMM_nJ0qV_b2_k6_2i0B-Z-O8UgO_KmLqU_a_52bXFYcYaRbgGHvaRcw8Ehk77xnaCgYKAcMSARESFQHGX2Mik_rcjhZTiilJZ94HNQaFfA0171"
 var VIDEO_PATH string = "C:\\Users\\AKumar22\\Desktop\\StudyContents\\GoLang\\SampleVideo.mp4"
 var POST_METHOD = "POST"

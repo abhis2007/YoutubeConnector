@@ -82,7 +82,7 @@ func main() {
 		routerInstance.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
 		routes.RouterConfiguration(routerInstance)
 		http.Handle("/", routerInstance)
-		// createAuthToken()
+		//createAuthToken()
 
 		fmt.Println("Server started at port : 8080")
 
@@ -428,7 +428,11 @@ func createAuthToken() {
 		clientID     = ClientId
 		clientSecret = ClientSecret
 		redirectURL  = config.REDIRECT_URL
-		scopes       = []string{"https://www.googleapis.com/auth/youtube.upload"}
+		//scopes       = []string{"https://www.googleapis.com/auth/youtube.upload"}
+		scopes = []string{
+			"https://www.googleapis.com/auth/youtube",
+			"https://www.googleapis.com/auth/youtube.force-ssl",
+		}
 	)
 
 	config := &oauth2.Config{
