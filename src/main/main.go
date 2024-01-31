@@ -83,6 +83,7 @@ func main() {
 		routes.RouterConfiguration(routerInstance)
 		http.Handle("/", routerInstance)
 		//createAuthToken()
+		//test2("")
 
 		fmt.Println("Server started at port : 8080")
 
@@ -137,7 +138,7 @@ func updateObject() {
 }
 
 // fINAL AND TESTED FUNCTION WORKING OK FOR UPLOAD THE OBJECT INTO THE CLOUD STORAGE BUCKET
-func test() {
+func test(videoPath string) {
 	// Load the service account JSON key file
 	serviceAccountData, err := os.ReadFile(config.ServiceAccountPath)
 	if err != nil {
@@ -161,7 +162,8 @@ func test() {
 	fmt.Println(key.AccessToken)
 
 	// Add the video file
-	filePath := config.VIDEO_PATH
+	// filePath := config.VIDEO_PATH
+	filePath := videoPath
 
 	baseFilePart := filepath.Base(filePath)
 	lists := strings.Split(baseFilePart, ".")
@@ -171,7 +173,7 @@ func test() {
 	}
 	var fileName string = lists[0]
 
-	file, err := os.ReadFile(config.VIDEO_PATH)
+	file, err := os.ReadFile(filePath)
 
 	if err != nil {
 		log.Fatalf("Error reading object data: %v", err)
@@ -279,7 +281,6 @@ func uploadObjectIntoBucket() {
 	// Print the response status and body
 	fmt.Println("Response Status:", response.Status)
 	fmt.Println("Response Body:", string(responseBody))
-
 }
 
 func uploadObjectIntoBucket2() {
@@ -784,4 +785,79 @@ func uploadThumbnail() {
 
 	// Print the response
 	fmt.Println("Response:", string(responseBody))
+}
+
+// fINAL AND TESTED FUNCTION WORKING OK FOR UPLOAD THE OBJECT INTO THE CLOUD STORAGE BUCKET
+func test2(videoPath string) {
+	// Load the service account JSON key file
+	serviceAccountData, err := os.ReadFile(config.ServiceAccountPath)
+	if err != nil {
+		log.Fatalf("Error reading service account JSON: %v", err)
+	}
+
+	// Create a JWT Config from the service account JSON
+	configToken, err := google.JWTConfigFromJSON(serviceAccountData, storage.DevstorageFullControlScope)
+	if err != nil {
+		log.Fatalf("Error creating JWT Config: %v", err)
+	}
+
+	// Create an HTTP client with OAuth2 authentication
+	client := configToken.Client(context.Background())
+
+	// Set headers, including the Authorization header with the JWT token
+	key, val := configToken.TokenSource(context.Background()).Token()
+	if val != nil {
+		fmt.Println(err)
+	}
+	fmt.Println(key.AccessToken)
+
+	// Add the video file
+	// filePath := config.VIDEO_PATH
+	fileLocation := videoPath
+
+	baseFilePart := filepath.Base(fileLocation)
+	lists := strings.Split(baseFilePart, ".")
+	if len(lists) <= 0 {
+		log.Fatalf("File name doesnot seems to be of a media type\n")
+		return
+	}
+	//var fileName string = lists[0]
+
+	file, err := os.ReadFile( /*fileLocation*/ "blob:http://localhost:8080/4648410e-edd6-431e-9b30-7f39199eb703")
+
+	if err != nil {
+		log.Fatalf("Error reading object data: %v", err)
+	}
+
+	//Form teh endpoints
+	url := fmt.Sprintf("https://storage.googleapis.com/upload/storage/v1/b/ytc-media-storage/o?uploadType=media&name=%s", "fileName")
+	fmt.Println(url)
+
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer([]byte(file)))
+	if err != nil {
+		log.Fatalf("Error creating HTTP request: %v", err)
+	}
+
+	req.Header.Set("Authorization", "Bearer "+key.AccessToken)
+	req.Header.Set("Content-Type", "video/mp4")
+
+	// Make the request
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Fatalf("Error making request: %v", err)
+	}
+	defer resp.Body.Close()
+
+	// Read the response body
+	responseBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log.Fatalf("Error reading response body: %v", err)
+	}
+
+	// Check if the request was successful (status code 2xx)
+	if resp.StatusCode/100 != 2 {
+		log.Fatalf("Error: %s", responseBody)
+	}
+
+	fmt.Println("Upload successful. Response:", string(responseBody))
 }
