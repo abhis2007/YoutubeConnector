@@ -10,9 +10,10 @@ func RouterConfiguration(router *mux.Router) {
 	router.HandleFunc("/videos", controller.Videos).Methods("GET")
 	router.HandleFunc("/upload", controller.UploadVideo).Methods("GET")
 	router.HandleFunc("/fetchAndUploadVideo", controller.FetchAndUploadVideo).Methods("POST")
+	router.HandleFunc("/UploadVideoOnStorageServer", controller.UploadVideoOnStorageServer).Methods("POST")
+
 	// router.HandleFunc("/getVideoDetails", controller.GetVideoDetails).Methods("GET")
 	// router.HandleFunc("/uploadVideo", controller.UploadVideo).Methods("POST")
 	// router.HandleFunc("/updateVideo", controller.UpdateVideo).Methods("PUT")
 	// router.HandleFunc("/addVideoThumbnail", controller.AddThumbnail).Methods("POST")
-
 }

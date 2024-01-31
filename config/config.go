@@ -7,6 +7,7 @@ import (
 	"os"
 )
 
+var STATIC_FILE_PATH = "C:\\Users\\AKumar22\\Desktop\\StudyContents\\GoLang\\YoutubeConnector\\static\\videos"
 var VIDEO_PATH2 = "C:\\Users\\AKumar22\\Desktop\\StudyContents\\GoLang\\YoutubeConnector\\testvd.mp4"
 var AUTH_MODE = "API_TOKEN"
 var ROOT_URL string = "https://www.googleapis.com"
@@ -18,7 +19,7 @@ var UTUBE_END_ENDPOINT string = "/youtube/v3/SampleVideo"
 // var UPLOAD_ENDPOINT string = "?part=snippet%2Cstatus"
 var API_Key string = "AIzaSyC_5hvxTsU8vijTreOE5zrwAws9XnCH6is"
 var OAUTH_TOKEN string = "ya29.a0AfB_byDtDOdgo7Dzc_Pg-URblTXa3VSB5j-KAzkFyvmcO3u9PcCA-t3-8mN21irBWaKnUy9Lh444iZorST4x_uj-f0UnrY8lvUunI7vT8bDhnp3mLw0JhQWzJZ0H2FzVr1e8pnwgUcQRnC9GvmRtmgGWIGngg-QnwsAaCgYKAQYSARESFQHGX2MiX1UfikBfsVQooD-4dNVW5g0170"
-var OAUTH_TOKEN_KR8799 string = "ya29.a0AfB_byC1uPyVDG3H6feJhhyfw3vdfsMbNw16X7ve2Z-EIyfmUtJPSLsL6F_Lgo_3yLCQInzKDyhhHmWhPC2cj226xRHjczTq58MjAfE9T6e_oY1s2BtVsp3gQXE5pw1hzZmhznw_A6MU9PJLUDKReuKPcUX0ZtyhGgaCgYKATkSARESFQHGX2MiPeoz-mT7n8b9pZa6jTKfew0169"
+var OAUTH_TOKEN_KR8799 string = "ya29.a0AfB_byBwGsxjw48C23d00iPtt_R-1wCVAnOXJIw70FuloINa9UeIuHLShaH2L_9fy8qau12YaqW3YYxM0PEAhQwCDOl_vQoQtP9sLtBvUR1B1ublF9V5QOKK33yFqvfX20jLqYZp6v8OJ1V93eURv67FGZuiKVjlzgaCgYKAUMSARESFQHGX2MilO1_mzTVz1lJyTHtEyy86g0169"
 var OAUTH_TOKEN_KR4DRI string = "ya29.a0AfB_byAMUjYzuFfeSjAOttAq9bsmkGldvKgjHVv5eJIQtkbfeCGyHY707MQAifHoPTpdB9HBuA_rKcEUbTaScEPMHPUz2sV2hndGAMM_nJ0qV_b2_k6_2i0B-Z-O8UgO_KmLqU_a_52bXFYcYaRbgGHvaRcw8Ehk77xnaCgYKAcMSARESFQHGX2Mik_rcjhZTiilJZ94HNQaFfA0171"
 var VIDEO_PATH string = "C:\\Users\\AKumar22\\Desktop\\StudyContents\\GoLang\\SampleVideo.mp4"
 var POST_METHOD = "POST"

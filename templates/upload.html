@@ -287,19 +287,29 @@
             </div>
         </div>
         <div class="col-md-5 col-lg-5">
+            <span id="err"></span>
+            <!-- action="/UploadVideoOnStorageServer" method="POST" -->
+            <form id="fileInput" enctype="multipart/form-data"
+                accept=".mp4|video/*">
+                <input type="file" name="userFile" />
+                <input type="submit" value="Upload" />
+            </form>
             <video class="singleVideo" width="auto" preload="auto"
                 controls>
-                <source src="/static/videos/SampleVideo.mp4"
+                <source id="lastVideo" src="/static/videos/SampleVideo.mp4"
                     type="video/mp4" />
                 Your browser does not support the video tag.
             </video>
         </div>
         <!-- <div class="col-md-1">class 1 </div> -->
+        <script
+            src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
 
         <script>
             
             const tags = [];
             const tagContainer = document.getElementById('tagContainer');
+            const fileInput = document.getElementById('fileInput');        
             const tagInput = document.getElementById('tagInput');
             const audience = document.getElementById('audience');       
             const advancedAge = document.getElementById('advancedAge');       
@@ -311,6 +321,32 @@
             var utilizedcount = 0 ;
             updateCount() ; 
             synchronizeTheScreen("none") ; //initially it is make for kids as well.
+            var err_b = document.getElementById("err") ;
+            fileInput.addEventListener('change', function(event){
+                var formData = new FormData(fileInput);
+                fetch("/UploadVideoOnStorageServer", {
+                    method : "POST",
+                    body : formData
+                })
+                .then(response=>{
+                    if( !response.ok ){
+                        return response.text().then(errorMessage => {
+                            alert(errorMessage)
+							throw new Error(errorMessage);
+						});
+                    }
+                    return response.text
+                })
+                .then(data=>{
+                    console.log(data)
+                })
+                .catch(error=>{
+                    err_b.innerText = error.message ;
+                    console.log(error)
+                    console.error(error);
+
+                })
+            }) ;
 
             audience.addEventListener('change', function(event) {
                 if (event.target.value === madeForKid) {
@@ -420,6 +456,8 @@
                 })
                 .catch(error => console.error("Error:", error));                
             }) ;
+
+
 
         </script>
     </body>

@@ -2,6 +2,7 @@ package controller
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"html/template"
@@ -10,9 +11,13 @@ import (
 	"mime/multipart"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/abhis2007/YOUTUECONNECTOR/config"
+	"golang.org/x/oauth2/google"
+	"google.golang.org/api/storage/v1"
 )
 
 func Index(w http.ResponseWriter, r *http.Request) {
@@ -47,43 +52,29 @@ func UploadVideo(w http.ResponseWriter, r *http.Request) {
 }
 
 type snippetBody struct {
-	Title       string `json:"title"`
-	CategoryId  string `json:"categoryId"`
-	Description string `json:"description"`
+	Title       string   `json:"title"`
+	CategoryId  string   `json:"categoryId"`
+	Description string   `json:"description"`
+	Tags        []string `json:"tags"`
+}
+
+type statusBody struct {
+	PrivacyStatus string `json:"privacyStatus"`
 }
 
 type mainBody struct {
 	Id      string      `json:"id"`
 	Snippet snippetBody `json:"snippet"`
+	Status  statusBody  `json:"status"`
 }
 
-func updateVideo(snippet string, videoId string) {
-	fmt.Println(videoId)
+func updateVideo(bodyArgs string, videoId string) {
 	accessToken := config.OAUTH_TOKEN_KR8799
-	uploadEndpoint := "https://youtube.googleapis.com/youtube/v3/videos?part=snippet"
-
-	fmt.Println(uploadEndpoint)
-
-	snippetParam := snippetBody{
-		Title:       "title_new_struct",
-		CategoryId:  "22",
-		Description: "NeeDesc",
-	}
-	bodyParams := mainBody{
-		Id:      videoId,
-		Snippet: snippetParam,
-	}
-	jsonData, err := json.Marshal(bodyParams)
-	if err != nil {
-		fmt.Println("Error marshalling JSON:", err)
-		return
-	}
-	
-	fmt.Println(string(jsonData))
-	
+	uploadEndpoint := "https://youtube.googleapis.com/youtube/v3/videos?part=snippet&part=status"
+	// fmt.Println(uploadEndpoint)
 
 	//Create the request
-	request, err := http.NewRequest("PUT", uploadEndpoint, strings.NewReader(string(jsonData)))
+	request, err := http.NewRequest("PUT", uploadEndpoint, strings.NewReader(bodyArgs))
 
 	if err != nil {
 		return
@@ -205,51 +196,186 @@ func callUpload(snippet string) {
 	fmt.Println("Response:", string(responseBody))
 }
 
+type VideoRequest struct {
+	FileLocation string `json:"fileLocation"`
+}
+
+// fINAL AND TESTED FUNCTION WORKING OK FOR UPLOAD THE OBJECT INTO THE CLOUD STORAGE BUCKET
+func test(videoPath string) {
+	// Load the service account JSON key file
+	serviceAccountData, err := os.ReadFile(config.ServiceAccountPath)
+	if err != nil {
+		log.Fatalf("Error reading service account JSON: %v", err)
+	}
+
+	// Create a JWT Config from the service account JSON
+	configToken, err := google.JWTConfigFromJSON(serviceAccountData, storage.DevstorageFullControlScope)
+	if err != nil {
+		log.Fatalf("Error creating JWT Config: %v", err)
+	}
+
+	// Create an HTTP client with OAuth2 authentication
+	client := configToken.Client(context.Background())
+
+	// Set headers, including the Authorization header with the JWT token
+	key, val := configToken.TokenSource(context.Background()).Token()
+	if val != nil {
+		fmt.Println(err)
+	}
+	//fmt.Println(key.AccessToken)
+
+	baseFilePart := filepath.Base(videoPath)
+	originalFileName := strings.TrimSuffix(baseFilePart, ".mp4")
+	fmt.Println(originalFileName)
+
+	file, err := os.ReadFile(videoPath)
+
+	if err != nil {
+		log.Fatalf("Error reading object data: %v", err)
+	}
+
+	//Form the endpoints
+	url := fmt.Sprintf("https://storage.googleapis.com/upload/storage/v1/b/ytc-media-storage/o?uploadType=media&name=%s", originalFileName)
+	//fmt.Println(url)
+
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer([]byte(file)))
+	if err != nil {
+		log.Fatalf("Error creating HTTP request: %v", err)
+	}
+
+	req.Header.Set("Authorization", "Bearer "+key.AccessToken)
+	req.Header.Set("Content-Type", "video/mp4")
+
+	// Make the request
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Fatalf("Error making request: %v", err)
+	}
+	defer resp.Body.Close()
+
+	// Read the response body
+	responseBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log.Fatalf("Error reading response body: %v", err)
+	}
+
+	// Check if the request was successful (status code 2xx)
+	if resp.StatusCode/100 != 2 {
+		log.Fatalf("Error: %s", responseBody)
+	}
+
+	fmt.Println("Upload successful. Response:", string(responseBody))
+}
+
+func sendError(w http.ResponseWriter, errorMessage string, statusCode int) {
+	http.Error(w, errorMessage, statusCode)
+	//w.Write([]byte(errorMessage))
+}
+
+// tested and working - request will be from the user.
+func UploadVideoOnStorageServer(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		return
+	}
+
+	file, handler, err := r.FormFile("userFile")
+	if err != nil {
+		sendError(w, "", http.StatusBadRequest)
+		return
+	}
+	defer file.Close()
+
+	if err := isValidFile(handler); err != nil {
+		fmt.Println(err)
+		sendError(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	fileExt := filepath.Ext(handler.Filename)
+	originalFileName := strings.TrimSuffix(handler.Filename, fileExt)
+
+	uniqueFileName := originalFileName + "_" + time.Now().Format("20060102_150405") + fileExt
+	destnationFileLocation := config.STATIC_FILE_PATH + "//" + uniqueFileName
+	//fmt.Println(destnationFileLocation)
+	dst, err := os.Create(destnationFileLocation)
+	if err != nil {
+		sendError(w, "Error in accessing the path", http.StatusBadRequest)
+		return
+	}
+
+	_, err = io.Copy(dst, file)
+	if err != nil {
+		sendError(w, "Failed to open the file content", http.StatusNotFound)
+		return
+	}
+	test(destnationFileLocation)
+
+}
+
+func isValidFile(filepart *multipart.FileHeader) error {
+	file, err := filepart.Open()
+	if err != nil {
+		return err
+	}
+	extn := filepath.Ext(filepart.Filename)
+	if extn != ".mp4" {
+		return fmt.Errorf("invalid file extension. Only .mp4 files are allowed")
+	}
+
+	buffer := make([]byte, 512) // Only read the first 512 bytes to detect MIME type
+	_, err = file.Read(buffer)
+	if err != nil {
+		return err
+	}
+	mimeType := http.DetectContentType(buffer)
+	if !strings.HasPrefix(mimeType, "video/") {
+		return fmt.Errorf("invalid file type. Only video files are allowedi")
+	}
+
+	return nil
+
+}
+
+// Tested code for update the video metada after the successfull upload of the video.
 func FetchAndUploadVideo(w http.ResponseWriter, r *http.Request) {
-
-	type VideoSnippet struct {
-		Title       string   `json:"title"`
-		Description string   `json:"description"`
-		CategoryId  string   `json:"categoryId"`
-		Tags        []string `json:"tags,omitempty"`
+	w.Header().Set("content-type", "application/json")
+	type formValue struct {
+		Title           string   `json:"title"`
+		Description     string   `json:"description"`
+		Category        string   `json:"category"`
+		Audience        string   `json:"audience"`
+		AgeRestrictions string   `json:"ageRestrictions"`
+		TagInput        []string `json:"tagInput"`
+		Privacy         string   `json:"privacy"`
 	}
-	type VideoStatus struct {
-		PrivacyStatus string `json:"privacyStatus"`
-	}
-	type Video struct {
-		Snippet *VideoSnippet `json:"snippet"`
-		Status  *VideoStatus  `json:"status"`
-	}
+	var (
+		d       formValue
+		videoId = "zHA-YusgSSo"
+	)
 
-	title := "Sample Title"
-	description := "Sample Description"
-	category := "24"
-	privacy := "unlisted"
-
-	// Create Video instance
-	upload := &Video{
-		Snippet: &VideoSnippet{
-			Title:       title,
-			Description: description,
-			CategoryId:  category,
-			Tags:        []string{"tag1", "tag2"},
-		},
-		Status: &VideoStatus{
-			PrivacyStatus: privacy,
-		},
+	json.NewDecoder(r.Body).Decode(&d)
+	snippetParam := snippetBody{
+		Title:       d.Title,
+		CategoryId:  "22",
+		Description: d.Description,
+		Tags:        d.TagInput,
 	}
-
-	// Marshal the struct into JSON
-	jsonData, err := json.Marshal(upload)
+	statusParam := statusBody{
+		PrivacyStatus: d.Privacy,
+	}
+	bodyParams := mainBody{
+		Id:      videoId,
+		Snippet: snippetParam,
+		Status:  statusParam,
+	}
+	jsonData, err := json.Marshal(bodyParams)
 	if err != nil {
 		fmt.Println("Error marshalling JSON:", err)
 		return
 	}
 
-	// Print the resulting JSON string
-	//fmt.Println(string(jsonData))
-	//callUpload(string(jsonData))
-	updateVideo(string(jsonData), "zHA-YusgSSo")
+	fmt.Println(string(jsonData))
+	updateVideo(string(jsonData), videoId)
 }
 
 func FetchAndUploadVideos(w http.ResponseWriter, r *http.Request) {
@@ -345,4 +471,8 @@ func Videos(w http.ResponseWriter, r *http.Request) {
 		log.Fatal(err)
 		return
 	}
+}
+
+func uploadTOGCS() {
+
 }
