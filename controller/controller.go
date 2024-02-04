@@ -2,7 +2,6 @@ package controller
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"fmt"
 	"html/template"
@@ -16,9 +15,115 @@ import (
 	"time"
 
 	"github.com/abhis2007/YOUTUECONNECTOR/config"
-	"golang.org/x/oauth2/google"
-	"google.golang.org/api/storage/v1"
 )
+
+func LoginData(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("login")
+	err := r.ParseMultipartForm(10 << 20) // 10 MB limit for the entire request
+	if err != nil {
+		http.Error(w, "Error parsing form data", http.StatusInternalServerError)
+		return
+	}
+	// Access form fields
+	var userID string = r.FormValue("userId")
+	var password string = r.FormValue("password")
+	fmt.Println("User ID:", userID)
+	fmt.Println("Password:", password)
+
+	if userID == "" {
+		fmt.Println("uid empty")
+		http.Error(w, "user id is empty", http.StatusBadRequest)
+		return
+	}
+
+	if len(password) <= 6 {
+		fmt.Println("phfkg")
+		http.Error(w, "Password doesn't meet the requirements.", http.StatusBadRequest)
+		return
+	}
+	db := config.DB
+	query := `SELECT count(userId) FROM userTbl WHERE userId = @p1 AND password = @p2`
+	var count int
+	err = db.QueryRow(query, userID, password).Scan(&count)
+	if err != nil {
+		log.Fatal(err)
+	}
+	if count == 0 {
+		http.Error(w, "User not found", http.StatusBadRequest)
+		return
+	}
+
+	config.USERID = userID
+
+}
+
+func SignupData(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("siiii")
+	err := r.ParseMultipartForm(10 << 20) // 10 MB limit for the entire request
+	if err != nil {
+		http.Error(w, "Error parsing form data", http.StatusInternalServerError)
+		return
+	}
+	// Access form fields
+	var userID string = r.FormValue("userId")
+	var password string = r.FormValue("password")
+	fmt.Println("User ID:", userID)
+	fmt.Println("Password:", password)
+
+	if userID == "" {
+		fmt.Println("uid empty")
+		http.Error(w, "user id is empty", http.StatusBadRequest)
+		return
+	}
+
+	if len(password) <= 6 {
+		fmt.Println("phfkg")
+		http.Error(w, "Password doesn't meet the requirements.", http.StatusBadRequest)
+		return
+	}
+	db := config.DB
+	query := `SELECT count(userId) FROM userTbl WHERE userId = @p1 AND password = @p2`
+	var count int
+	err = db.QueryRow(query, userID, password).Scan(&count)
+	if err != nil {
+		log.Fatal(err)
+	}
+	if count == 0 {
+		insertSql := `insert into userTbl (userId, password) VALUES (@P1, @P2)`
+		db.Exec(insertSql, userID, password)
+	} else {
+		http.Error(w, "User already exists", http.StatusBadRequest)
+	}
+
+}
+
+func SignUp(w http.ResponseWriter, r *http.Request) {
+	parseTemplate, err := template.ParseFiles("./templates/signup.html")
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
+
+	err = parseTemplate.Execute(w, nil)
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
+}
+
+func Login(w http.ResponseWriter, r *http.Request) {
+	parseTemplate, err := template.ParseFiles("./templates/login.html")
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
+
+	err = parseTemplate.Execute(w, nil)
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
+}
 
 func Index(w http.ResponseWriter, r *http.Request) {
 
@@ -69,7 +174,7 @@ type mainBody struct {
 }
 
 func updateVideo(bodyArgs string, videoId string) {
-	accessToken := config.OAUTH_TOKEN_KR8799
+	//accessToken := config.OAUTH_TOKEN_KR8799
 	uploadEndpoint := "https://youtube.googleapis.com/youtube/v3/videos?part=snippet&part=status"
 	// fmt.Println(uploadEndpoint)
 
@@ -81,7 +186,7 @@ func updateVideo(bodyArgs string, videoId string) {
 	}
 
 	// Add the YouTube API key or OAuth 2.0 access token to the request
-	request.Header.Set("Authorization", "Bearer "+accessToken)
+	//request.Header.Set("Authorization", "Bearer "+accessToken)
 	request.Header.Set("Content-Type", "application/json")
 
 	client := &http.Client{}
@@ -200,53 +305,46 @@ type VideoRequest struct {
 	FileLocation string `json:"fileLocation"`
 }
 
-// fINAL AND TESTED FUNCTION WORKING OK FOR UPLOAD THE OBJECT INTO THE CLOUD STORAGE BUCKET
-func test(videoPath string) {
-	// Load the service account JSON key file
-	serviceAccountData, err := os.ReadFile(config.ServiceAccountPath)
-	if err != nil {
-		log.Fatalf("Error reading service account JSON: %v", err)
-	}
+func uploadObjectOnGCS(videoPath string) {
 
-	// Create a JWT Config from the service account JSON
-	configToken, err := google.JWTConfigFromJSON(serviceAccountData, storage.DevstorageFullControlScope)
+	//extract the token from service account
+	tokenKey, err := config.GenerateJWTToken()
 	if err != nil {
 		log.Fatalf("Error creating JWT Config: %v", err)
 	}
 
-	// Create an HTTP client with OAuth2 authentication
-	client := configToken.Client(context.Background())
+	// Add the video file
+	// filePath := config.VIDEO_PATH
+	filePath := videoPath
 
-	// Set headers, including the Authorization header with the JWT token
-	key, val := configToken.TokenSource(context.Background()).Token()
-	if val != nil {
-		fmt.Println(err)
+	baseFilePart := filepath.Base(filePath)
+	lists := strings.Split(baseFilePart, ".")
+	if len(lists) <= 0 {
+		log.Fatalf("File name doesnot seems to be of a media type\n")
+		return
 	}
-	//fmt.Println(key.AccessToken)
+	var fileName string = lists[0]
 
-	baseFilePart := filepath.Base(videoPath)
-	originalFileName := strings.TrimSuffix(baseFilePart, ".mp4")
-	fmt.Println(originalFileName)
-
-	file, err := os.ReadFile(videoPath)
+	file, err := os.ReadFile(filePath)
 
 	if err != nil {
 		log.Fatalf("Error reading object data: %v", err)
 	}
 
-	//Form the endpoints
-	url := fmt.Sprintf("https://storage.googleapis.com/upload/storage/v1/b/ytc-media-storage/o?uploadType=media&name=%s", originalFileName)
-	//fmt.Println(url)
+	//Form teh endpoints
+	url := fmt.Sprintf("https://storage.googleapis.com/upload/storage/v1/b/ytc-media-storage/o?uploadType=media&name=%s", fileName)
+	fmt.Println(url)
 
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer([]byte(file)))
 	if err != nil {
 		log.Fatalf("Error creating HTTP request: %v", err)
 	}
 
-	req.Header.Set("Authorization", "Bearer "+key.AccessToken)
+	req.Header.Set("Authorization", "Bearer "+tokenKey)
 	req.Header.Set("Content-Type", "video/mp4")
 
 	// Make the request
+	client := http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
 		log.Fatalf("Error making request: %v", err)
@@ -308,7 +406,7 @@ func UploadVideoOnStorageServer(w http.ResponseWriter, r *http.Request) {
 		sendError(w, "Failed to open the file content", http.StatusNotFound)
 		return
 	}
-	test(destnationFileLocation)
+	uploadObjectOnGCS(destnationFileLocation)
 
 }
 
@@ -336,7 +434,7 @@ func isValidFile(filepart *multipart.FileHeader) error {
 
 }
 
-// Tested code for update the video metada after the successfull upload of the video.
+// Tested code for update the video metada after the successfull upload of the video on the utube.
 func FetchAndUploadVideo(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("content-type", "application/json")
 	type formValue struct {
@@ -473,6 +571,13 @@ func Videos(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func uploadTOGCS() {
+func insertdata(objectid string) {
 
+	// Query data from the table
+	db := config.DB
+	insertSql := `insert into objectTbl (userName, objectId, bucketId) VALUES (@p1, @p2, @p3)`
+	_, err := db.Exec(insertSql, config.USERID, objectid, "ytc-media-storage")
+	if err != nil {
+		fmt.Println(err)
+	}
 }

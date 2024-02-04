@@ -3,21 +3,21 @@ package main
 import (
 	"bytes"
 	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"io"
 	"log"
 	"mime/multipart"
 	"net/http"
-	"net/textproto"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"text/template"
 
 	"github.com/abhis2007/YOUTUECONNECTOR/config"
 	"github.com/abhis2007/YOUTUECONNECTOR/routes"
+	_ "github.com/denisenkom/go-mssqldb"
 	"github.com/gorilla/mux"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
@@ -67,7 +67,6 @@ func main() {
 	// fmt.Println(string(body))
 	if false {
 		callUpload()
-		getVideo()
 
 		uploadThumbnail()
 		config.InitConfigurations()
@@ -82,21 +81,231 @@ func main() {
 		routerInstance.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
 		routes.RouterConfiguration(routerInstance)
 		http.Handle("/", routerInstance)
+		//uploadObjectOnGCS("C:\\Users\\AKumar22\\Desktop\\StudyContents\\GoLang\\sample.mp4")
 		//createAuthToken()
+		//downloadObject()
 		//test2("")
-
+		config.DbInit()
+		//insertdata("to_tony_20240202_234305")
+		//deleteObjectOnGCS()
 		fmt.Println("Server started at port : 8080")
 
-		//test()
+		// test()
 		log.Fatal(http.ListenAndServe(":8080", routerInstance))
+
 	}
+
 	// test()
 	// uploadObjectIntoBucket2()
 	//updateObject()
 
 }
 
-// Update the objec inside the bucket
+// Tested code
+func deleteObjectOnGCS() {
+	url := "https://storage.googleapis.com/storage/v1/b/ytc-media-storage/o/to_tony_20240204_075052"
+	req, err := http.NewRequest("DELETE", url, nil)
+	if err != nil {
+		log.Fatalf("Error creating HTTP request: %v", err)
+	}
+	serviceAccountData, err := os.ReadFile(config.ServiceAccountPath)
+	if err != nil {
+		log.Fatalf("Error extacting the service acc: %v", err)
+	}
+	configToken, err := google.JWTConfigFromJSON(serviceAccountData, storage.DevstorageFullControlScope)
+	if err != nil {
+		log.Fatalf("Error creating JWT Config: %v", err)
+	}
+	key, val := configToken.TokenSource(context.Background()).Token()
+	if val != nil {
+		fmt.Println(err)
+	}
+
+	// Set headers, including the Authorization header with the JWT token
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+key.AccessToken)
+
+	// Create an HTTP client with OAuth2 authentication
+	//client := configToken.Client(context.Background())
+
+	client := &http.Client{}
+	// Make the request
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Fatalf("Error making request: %v", err)
+	}
+	defer resp.Body.Close()
+
+	fmt.Println(resp)
+}
+
+/*
+//Still need to know can we do the override of the content inside the bucket object.
+
+func updateVideoOnGCS() {
+	fmt.Println("Called UpdateVideoOnGCS")
+	videoPath := "C:\\Users\\AKumar22\\Desktop\\StudyContents\\GoLang\\sample.mp4"
+	// Load the service account JSON key file
+	serviceAccountData, err := os.ReadFile(config.ServiceAccountPath)
+	if err != nil {
+		log.Fatalf("Error reading service account JSON: %v", err)
+	}
+
+	// Create a JWT Config from the service account JSON
+	configToken, err := google.JWTConfigFromJSON(serviceAccountData, storage.DevstorageFullControlScope)
+	if err != nil {
+		log.Fatalf("Error creating JWT Config: %v", err)
+	}
+
+	// Create an HTTP client with OAuth2 authentication
+	client := configToken.Client(context.Background())
+
+	// Set headers, including the Authorization header with the JWT token
+	// key, val := configToken.TokenSource(context.Background()).Token()
+	// if val != nil {
+	// 	fmt.Println(err)
+	// }
+	// fmt.Println(key.AccessToken)
+
+	// baseFilePart := filepath.Base(videoPath)
+	// originalFileName := strings.TrimSuffix(baseFilePart, ".mp4")
+	// fmt.Println(originalFileName)
+
+	file, err := os.ReadFile(videoPath)
+	file = file
+
+	if err != nil {
+		log.Fatalf("Error reading object data: %v", err)
+	}
+
+	//Form the endpoints
+	// objectId := "to_tony_20240204_065217"
+	// url := fmt.Sprintf("https://storage.googleapis.com/storage/v1/b/ytc-media-storage/o/%s", objectId)
+	url := "https://storage.googleapis.com/storage/v1/b/ytc-media-storage/o/to_tony_20240204_065217/rewriteTo/b/ytc-media-storage/o/to_tony_20240204_065217"
+	fmt.Println(url)
+
+	req, err := http.NewRequest("POST", url, nil)
+	if err != nil {
+		log.Fatalf("Error creating HTTP request: %v", err)
+	}
+
+	// req.Header.Set("Authorization", "Bearer "+key.AccessToken)
+	req.Header.Set("Content-Type", "application/json")
+
+	// Make the request
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Fatalf("Error making request: %v", err)
+	}
+	defer resp.Body.Close()
+
+	fmt.Println(resp)
+
+	// Read the response body
+	responseBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log.Fatalf("Error reading response body: %v", err)
+	}
+
+	// Check if the request was successful (status code 2xx)
+	if resp.StatusCode/100 != 2 {
+		log.Fatalf("Error: %s", responseBody)
+	}
+
+	fmt.Println("Upload successful. Response:", string(responseBody))
+
+}
+*/
+
+// Probably in future this should go off - then we should be using config.DBInit() function rather than below setupDb()
+func setupDb() {
+	server := "MF-H59IBOW2THNM"
+	port := 1433
+	user := "sa"
+	password := "1iso*help"
+	database := "ytc"
+
+	// Construct the DSN
+	dsn := fmt.Sprintf("server=%s;user id=%s;password=%s;port=%d;database=%s", server, user, password, port, database)
+	fmt.Println(dsn)
+	// Open a connection to the SQL Server database
+	db, err := sql.Open("sqlserver", dsn)
+	if err != nil {
+		log.Fatal(err)
+	}
+	//defer db.Close()
+
+	// Ping the database to check if the connection is successful
+	err = db.Ping()
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("Connected to the SQL Server database!")
+	config.DB = db
+
+	// Create the table
+	createTable := config.ObjectTblCreation
+	_, err = db.Exec(createTable)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	_, err = db.Exec(config.UserTableCreation, "userTbl")
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+// Tested code - Now we can authenticate this with using the service account.
+func downloadObject() {
+
+	//extract the token from service account
+	tokenKey, err := generateJWTToken()
+
+	if err != nil {
+		log.Fatalf("Error extacting the service acc: %v", err)
+	}
+
+	bucketId := "ytc-media-storage"
+	url := "https://storage.googleapis.com/" + bucketId + "/"
+	url += "abhis2007" + "/to_tony_20240203_175457"
+
+	fmt.Println(url)
+	req, err := http.NewRequest("GET", url, nil)
+
+	// Set headers, including the Authorization header with the JWT token
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+tokenKey)
+
+	if err != nil {
+		fmt.Println("Error in making the request")
+		return
+	}
+	client := http.Client{}
+	res, err := client.Do(req)
+	if err != nil {
+		fmt.Println(res)
+		return
+	}
+
+	if res.StatusCode/100 != 2 {
+		fmt.Println(res)
+		return
+	}
+
+	file, err := os.Create("C:\\Users\\AKumar22\\Desktop\\StudyContents\\GoLang\\YoutubeConnector\\static\\videos\\today.mp4")
+	if err != nil {
+		fmt.Println(err)
+	}
+	defer file.Close()
+
+	_, err = io.Copy(file, res.Body)
+	if err != nil {
+		fmt.Println(err)
+	}
+}
+
+// Update the object inside the bucket
 func updateObject() {
 	objectUrl := config.OBJECT_URL
 	file, err := os.ReadFile(config.VIDEO_PATH2)
@@ -138,28 +347,14 @@ func updateObject() {
 }
 
 // fINAL AND TESTED FUNCTION WORKING OK FOR UPLOAD THE OBJECT INTO THE CLOUD STORAGE BUCKET
-func test(videoPath string) {
-	// Load the service account JSON key file
-	serviceAccountData, err := os.ReadFile(config.ServiceAccountPath)
-	if err != nil {
-		log.Fatalf("Error reading service account JSON: %v", err)
-	}
+// func test(videoPath string) {
+func uploadObjectOnGCS(videoPath string) {
 
-	// Create a JWT Config from the service account JSON
-	configToken, err := google.JWTConfigFromJSON(serviceAccountData, storage.DevstorageFullControlScope)
+	//extract the token from service account
+	tokenKey, err := generateJWTToken()
 	if err != nil {
 		log.Fatalf("Error creating JWT Config: %v", err)
 	}
-
-	// Create an HTTP client with OAuth2 authentication
-	client := configToken.Client(context.Background())
-
-	// Set headers, including the Authorization header with the JWT token
-	key, val := configToken.TokenSource(context.Background()).Token()
-	if val != nil {
-		fmt.Println(err)
-	}
-	fmt.Println(key.AccessToken)
 
 	// Add the video file
 	// filePath := config.VIDEO_PATH
@@ -188,10 +383,11 @@ func test(videoPath string) {
 		log.Fatalf("Error creating HTTP request: %v", err)
 	}
 
-	req.Header.Set("Authorization", "Bearer "+key.AccessToken)
+	req.Header.Set("Authorization", "Bearer "+tokenKey)
 	req.Header.Set("Content-Type", "video/mp4")
 
 	// Make the request
+	client := http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
 		log.Fatalf("Error making request: %v", err)
@@ -283,121 +479,7 @@ func uploadObjectIntoBucket() {
 	fmt.Println("Response Body:", string(responseBody))
 }
 
-func uploadObjectIntoBucket2() {
-	url := fmt.Sprintf("https://storage.googleapis.com/upload/storage/v1/b/ytc-media-storage/o?uploadType=multipart&name=%s", "pets%2Fdog2.mp4")
-	// url := "https://storage.googleapis.com/upload/storage/v1/b/ytc-media-storage/o?uploadType=multipart"
-	fmt.Println(url)
-
-	file, err := os.Open(config.VIDEO_PATH)
-	if err != nil {
-		log.Fatalf("Error reading object data: %v", err)
-	}
-
-	buffer := bytes.Buffer{}
-	writer := multipart.NewWriter(&buffer)
-
-	// Add JSON metadata part
-	metadataPart, err := writer.CreatePart(textproto.MIMEHeader{
-		"Content-Type": {"application/json; charset=UTF-8"},
-	})
-
-	if err != nil {
-		log.Fatalf("Error creating the metadata part: %v", err)
-		return
-	}
-
-	// Replace OBJECT_METADATA with your actual metadata
-	_, err = metadataPart.Write([]byte(`{"Samplekey": "Samplevalue"}`))
-	if err != nil {
-		log.Fatalf("Error writing metadata: %v", err)
-		return
-	}
-
-	// Add video file part
-	filePart, err := writer.CreateFormFile("file", "SampleFile")
-
-	if err != nil {
-		log.Fatalf("Error creating the file part: %v", err)
-		return
-	}
-
-	_, err = io.Copy(filePart, file)
-	if err != nil {
-		log.Fatalf("Error copying the file part: %v", err)
-		return
-	}
-
-	// Close the writer
-	writer.Close()
-
-	request, err := http.NewRequest("POST", url, &buffer)
-	if err != nil {
-		fmt.Printf("Error creating request: %v\n", err)
-		return
-	}
-
-	token, _ := generateJWTToken()
-	bearerToken := "Bearer " + token
-	fmt.Println(bearerToken)
-
-	request.Header.Set("Authorization", bearerToken)
-	request.Header.Set("Content-Type", "multipart/related")
-	request.Header.Set("Content-Length", strconv.Itoa(buffer.Len())) // Set the Content-Length header
-
-	client := http.Client{}
-	response, err := client.Do(request)
-
-	if err != nil {
-		fmt.Printf("Error making request: %v\n", err)
-		return
-	}
-	defer response.Body.Close()
-
-	responseBody, err := io.ReadAll(response.Body)
-	if err != nil {
-		fmt.Printf("Error reading response body: %v\n", err)
-		return
-	}
-
-	fmt.Println("Response Status:", response.Status)
-	fmt.Println("Response Body:", string(responseBody))
-}
-
 func generateJWTToken() (string, error) {
-	// CREATING SOME WRONG JWT KEY HENCE USED THE CLIENT LIBRARY
-	// serviceAccount, err := config.LoadServiceAccount(config.ServiceAccountPath)
-
-	// if err != nil {
-	// 	log.Fatal("Error loading service account:", err)
-	// 	return "", err
-	// }
-
-	// // Create a new token object with claim
-	// token := jwt.New(jwt.SigningMethodRS256)
-
-	// //set the token with claims
-	// claims := token.Claims.(jwt.MapClaims)
-	// claims["sub"] = serviceAccount.ClientEmail
-	// //claims["exp"] = time.Now().Add(time.Hour * 1).Unix() // Replace with your desired expiration time
-	// fmt.Println(claims["exp"])
-	// claims["iss"] = serviceAccount.ClientEmail
-	// claims["scope"] = storage.DevstorageFullControlScope
-	// claims["aud"] = "https://www.googleapis.com/oauth2/v4/token"
-
-	// // parse the private key
-	// signingKey, err := jwt.ParseRSAPrivateKeyFromPEM([]byte(serviceAccount.PrivateKey))
-	// if err != nil {
-	// 	log.Fatal("Error parsing the private key ", err)
-	// 	return "", err
-	// }
-
-	// jwtSignedToken, err := token.SignedString(signingKey)
-	// if err != nil {
-	// 	log.Fatal("Error in signing the token ", err)
-	// 	return "", err
-	// }
-	// return jwtSignedToken, nil
-
 	// Load the service account JSON key file
 	serviceAccountData, err := os.ReadFile(config.ServiceAccountPath)
 	// serviceAccountData, err := ioutil.ReadFile(config.ServiceAccountPath)
@@ -433,6 +515,7 @@ func createAuthToken() {
 		scopes = []string{
 			"https://www.googleapis.com/auth/youtube",
 			"https://www.googleapis.com/auth/youtube.force-ssl",
+			"https://www.googleapis.com/auth/cloud-platform",
 		}
 	)
 
@@ -666,43 +749,6 @@ func uploadVideo(jsonPayloadData string) {
 	fmt.Println("Response Body:", string(responseBody))
 }
 
-func getVideo() {
-	authenticationMode := config.AUTH_MODE
-	rootURL := config.ROOT_URL
-	apiKey := config.API_Key
-
-	videoId := "8wx_bxtBQQ0"
-	var getVideoEndPoint string = rootURL + config.UTUBE_END_ENDPOINT
-
-	getVideoEndPoint += "?id=" + videoId
-	switch authenticationMode {
-	case "API_TOKEN":
-		getVideoEndPoint += "&key=" + apiKey
-	}
-	getVideoEndPoint += "&part=snippet,contentDetails,statistics,status"
-
-	fmt.Println(getVideoEndPoint)
-	res, err := http.Get(getVideoEndPoint)
-
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	_, err = io.ReadAll(res.Body)
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	// jsondata, err := json.Marshal(body)
-	// if err != nil {
-	// 	fmt.Println(err)
-	// }
-
-	fmt.Println("Status ", res.StatusCode)
-
-	fmt.Println(res)
-}
-
 func uploadThumbnail() {
 
 	// Replace with the video ID for which you want to set the thumbnail
@@ -785,79 +831,4 @@ func uploadThumbnail() {
 
 	// Print the response
 	fmt.Println("Response:", string(responseBody))
-}
-
-// fINAL AND TESTED FUNCTION WORKING OK FOR UPLOAD THE OBJECT INTO THE CLOUD STORAGE BUCKET
-func test2(videoPath string) {
-	// Load the service account JSON key file
-	serviceAccountData, err := os.ReadFile(config.ServiceAccountPath)
-	if err != nil {
-		log.Fatalf("Error reading service account JSON: %v", err)
-	}
-
-	// Create a JWT Config from the service account JSON
-	configToken, err := google.JWTConfigFromJSON(serviceAccountData, storage.DevstorageFullControlScope)
-	if err != nil {
-		log.Fatalf("Error creating JWT Config: %v", err)
-	}
-
-	// Create an HTTP client with OAuth2 authentication
-	client := configToken.Client(context.Background())
-
-	// Set headers, including the Authorization header with the JWT token
-	key, val := configToken.TokenSource(context.Background()).Token()
-	if val != nil {
-		fmt.Println(err)
-	}
-	fmt.Println(key.AccessToken)
-
-	// Add the video file
-	// filePath := config.VIDEO_PATH
-	fileLocation := videoPath
-
-	baseFilePart := filepath.Base(fileLocation)
-	lists := strings.Split(baseFilePart, ".")
-	if len(lists) <= 0 {
-		log.Fatalf("File name doesnot seems to be of a media type\n")
-		return
-	}
-	//var fileName string = lists[0]
-
-	file, err := os.ReadFile( /*fileLocation*/ "blob:http://localhost:8080/4648410e-edd6-431e-9b30-7f39199eb703")
-
-	if err != nil {
-		log.Fatalf("Error reading object data: %v", err)
-	}
-
-	//Form teh endpoints
-	url := fmt.Sprintf("https://storage.googleapis.com/upload/storage/v1/b/ytc-media-storage/o?uploadType=media&name=%s", "fileName")
-	fmt.Println(url)
-
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer([]byte(file)))
-	if err != nil {
-		log.Fatalf("Error creating HTTP request: %v", err)
-	}
-
-	req.Header.Set("Authorization", "Bearer "+key.AccessToken)
-	req.Header.Set("Content-Type", "video/mp4")
-
-	// Make the request
-	resp, err := client.Do(req)
-	if err != nil {
-		log.Fatalf("Error making request: %v", err)
-	}
-	defer resp.Body.Close()
-
-	// Read the response body
-	responseBody, err := io.ReadAll(resp.Body)
-	if err != nil {
-		log.Fatalf("Error reading response body: %v", err)
-	}
-
-	// Check if the request was successful (status code 2xx)
-	if resp.StatusCode/100 != 2 {
-		log.Fatalf("Error: %s", responseBody)
-	}
-
-	fmt.Println("Upload successful. Response:", string(responseBody))
 }

@@ -7,6 +7,10 @@ import (
 
 func RouterConfiguration(router *mux.Router) {
 	router.HandleFunc("/", controller.Index).Methods("GET")
+	router.HandleFunc("/signUp", controller.SignUp).Methods("GET")
+	router.HandleFunc("/Login", controller.Login).Methods("GET")
+	router.HandleFunc("/SignupData", controller.SignupData).Methods("POST")
+	router.HandleFunc("/LoginData", controller.LoginData).Methods("POST")
 	router.HandleFunc("/videos", controller.Videos).Methods("GET")
 	router.HandleFunc("/upload", controller.UploadVideo).Methods("GET")
 	router.HandleFunc("/fetchAndUploadVideo", controller.FetchAndUploadVideo).Methods("POST")
