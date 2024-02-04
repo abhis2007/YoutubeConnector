@@ -1,12 +1,19 @@
 package config
 
 import (
+	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
-
+	"log"
 	"os"
+
+	_ "github.com/denisenkom/go-mssqldb"
+	"golang.org/x/oauth2/google"
+	"google.golang.org/api/storage/v1"
 )
 
+var DB *sql.DB // Global variable to hold the *sql.DB instance
 var STATIC_FILE_PATH = "C:\\Users\\AKumar22\\Desktop\\StudyContents\\GoLang\\YoutubeConnector\\static\\videos"
 var VIDEO_PATH2 = "C:\\Users\\AKumar22\\Desktop\\StudyContents\\GoLang\\YoutubeConnector\\testvd.mp4"
 var AUTH_MODE = "API_TOKEN"
@@ -19,7 +26,7 @@ var UTUBE_END_ENDPOINT string = "/youtube/v3/SampleVideo"
 // var UPLOAD_ENDPOINT string = "?part=snippet%2Cstatus"
 var API_Key string = "AIzaSyC_5hvxTsU8vijTreOE5zrwAws9XnCH6is"
 var OAUTH_TOKEN string = "ya29.a0AfB_byDtDOdgo7Dzc_Pg-URblTXa3VSB5j-KAzkFyvmcO3u9PcCA-t3-8mN21irBWaKnUy9Lh444iZorST4x_uj-f0UnrY8lvUunI7vT8bDhnp3mLw0JhQWzJZ0H2FzVr1e8pnwgUcQRnC9GvmRtmgGWIGngg-QnwsAaCgYKAQYSARESFQHGX2MiX1UfikBfsVQooD-4dNVW5g0170"
-var OAUTH_TOKEN_KR8799 string = "ya29.a0AfB_byBwGsxjw48C23d00iPtt_R-1wCVAnOXJIw70FuloINa9UeIuHLShaH2L_9fy8qau12YaqW3YYxM0PEAhQwCDOl_vQoQtP9sLtBvUR1B1ublF9V5QOKK33yFqvfX20jLqYZp6v8OJ1V93eURv67FGZuiKVjlzgaCgYKAUMSARESFQHGX2MilO1_mzTVz1lJyTHtEyy86g0169"
+var OAUTH_TOKEN_KR8799 string = "ya29.a0AfB_byCv-BmAK_FyYoVCKA9HwxsY2plLx6YcbmjNnkmQU2PWlVS6QzBVJYR7yno_hVdlGZBIRF1estnb6Z74NXvleqw--m1X6PBoHSZH4Au87jtJNp-pUyVCQ5Vu7rKKqVgPD5ddhIkbxFYUbUXMyahZq-ubOFWArspYaCgYKARISARASFQHGX2MiinTrcahbuysTGBTPd0d7vg0171"
 var OAUTH_TOKEN_KR4DRI string = "ya29.a0AfB_byAMUjYzuFfeSjAOttAq9bsmkGldvKgjHVv5eJIQtkbfeCGyHY707MQAifHoPTpdB9HBuA_rKcEUbTaScEPMHPUz2sV2hndGAMM_nJ0qV_b2_k6_2i0B-Z-O8UgO_KmLqU_a_52bXFYcYaRbgGHvaRcw8Ehk77xnaCgYKAcMSARESFQHGX2Mik_rcjhZTiilJZ94HNQaFfA0171"
 var VIDEO_PATH string = "C:\\Users\\AKumar22\\Desktop\\StudyContents\\GoLang\\SampleVideo.mp4"
 var POST_METHOD = "POST"
@@ -116,3 +123,119 @@ func LoadServiceAccount(path string) (*ServiceAccount, error) {
 	}
 	return &tokenConfig, nil
 }
+var USERID string;
+var ObjectTblCreation = `IF not EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'objectTbl' )
+BEGIN
+  CREATE TABLE objectTbl (
+		userName varchar(50),
+		objectId VARCHAR(50) NOT NULL,
+		bucketId VARCHAR(50) NOT NULL
+	)
+END`
+
+var UserTableCreation = `IF not EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'userTbl')
+BEGIN
+	CREATE table userTbl(
+	  userId varchar(50) primary key,
+	  password varchar(50) not null
+	)
+END`
+
+
+func DbInit() {
+	server := "MF-H59IBOW2THNM"
+	port := 1433
+	user := "sa"
+	password := "1iso*help"
+	database := "ytc"
+
+	// Construct the DSN
+	dsn := fmt.Sprintf("server=%s;user id=%s;password=%s;port=%d;database=%s", server, user, password, port, database)
+	fmt.Println(dsn)
+	// Open a connection to the SQL Server database
+	db, err := sql.Open("sqlserver", dsn)
+	if err != nil {
+		log.Fatal(err)
+	}
+	//defer db.Close()
+
+	// Ping the database to check if the connection is successful
+	err = db.Ping()
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("Connected to the SQL Server database!")
+	DB = db
+
+	// Create the table
+	createTable := ObjectTblCreation
+	_, err = db.Exec(createTable)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	_, err = db.Exec(UserTableCreation, "userTbl")
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+
+func GenerateJWTToken() (string, error) {
+	// CREATING SOME WRONG JWT KEY HENCE USED THE CLIENT LIBRARY
+	// serviceAccount, err := config.LoadServiceAccount(config.ServiceAccountPath)
+
+	// if err != nil {
+	// 	log.Fatal("Error loading service account:", err)
+	// 	return "", err
+	// }
+
+	// // Create a new token object with claim
+	// token := jwt.New(jwt.SigningMethodRS256)
+
+	// //set the token with claims
+	// claims := token.Claims.(jwt.MapClaims)
+	// claims["sub"] = serviceAccount.ClientEmail
+	// //claims["exp"] = time.Now().Add(time.Hour * 1).Unix() // Replace with your desired expiration time
+	// fmt.Println(claims["exp"])
+	// claims["iss"] = serviceAccount.ClientEmail
+	// claims["scope"] = storage.DevstorageFullControlScope
+	// claims["aud"] = "https://www.googleapis.com/oauth2/v4/token"
+
+	// // parse the private key
+	// signingKey, err := jwt.ParseRSAPrivateKeyFromPEM([]byte(serviceAccount.PrivateKey))
+	// if err != nil {
+	// 	log.Fatal("Error parsing the private key ", err)
+	// 	return "", err
+	// }
+
+	// jwtSignedToken, err := token.SignedString(signingKey)
+	// if err != nil {
+	// 	log.Fatal("Error in signing the token ", err)
+	// 	return "", err
+	// }
+	// return jwtSignedToken, nil
+
+	// Load the service account JSON key file
+	serviceAccountData, err := os.ReadFile(ServiceAccountPath)
+	// serviceAccountData, err := ioutil.ReadFile(config.ServiceAccountPath)
+	if err != nil {
+		log.Fatalf("Error reading service account JSON: %v", err)
+	}
+
+	// Create a JWT Config from the service account JSON
+	configToken, err := google.JWTConfigFromJSON(serviceAccountData, storage.DevstorageFullControlScope)
+	if err != nil {
+		log.Fatalf("Error creating JWT Config: %v", err)
+	}
+
+	// Set headers, including the Authorization header with the JWT token
+	key, val := configToken.TokenSource(context.Background()).Token()
+	if val != nil {
+		fmt.Println(err)
+	}
+	//fmt.Println(key.AccessToken)
+	return key.AccessToken, nil
+
+}
+
