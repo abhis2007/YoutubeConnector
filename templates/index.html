@@ -46,146 +46,278 @@
             <li class="nav-item">
               <a class="nav-link text-light" href="/videos">Videos</a>
             </li>
+            {{if eq . "Admin"}}
             <li class="nav-item">
               <a class="nav-link text-light" href="/upload">Upload</a>
             </li>
-            <li class="nav-item">
-              <a class="nav-link text-light" href="#">Settings</a>
+            {{end}}
+            <li>
+              <a class="nav-link text-light" href="/users">Users</a>
             </li>
-          </ul>
-          <ul class="navbar-nav nav-flex-icons">
-            <li class="nav-item">
-              <a class="nav-link text-light"
-                href="/signUp">Login/Signup</a>
+            <li>
+              <a class="nav-link text-light" href="/assignTask">Assign Task</a>
             </li>
-          </ul>
-        </div>
-      </nav>
-    </div>
-    <div class="row">
-      <div class="col-md-1"></div>
-      <div class="col-md-10">
-        <div class="row h1 ml-2 text-center"><span>Most Trending on my
-            channel</span></div>
-        <div class="row mt-2">
-          <video class="singleVideo" preload="auto" controls>
-            <source src="/static/videos/SampleVideo.mp4"
-              type="video/mp4" />
-            Your browser does not support the video tag.
-          </video>
-        </div>
-        <div class="row mt-1">
-          <div class="col-md-12 ml-2">
-            name = YoutubeVideo trending on my channel
-            fgjfkjgk
-            jg
+            <li class="nav-item">
+              <!-- Button to trigger the modal -->
+              <a class="nav-link text-light" data-toggle="modal" href="#"
+                data-target="#coUserLoginData">
+                Add Co-User</a>
+              <!-- Modal -->
+              <div class="modal fade" id="coUserLoginData" tabindex="-1"
+                role="dialog"
+                aria-labelledby="coUserLoginDataModalLabel" aria-hidden="true">
+                <div class="modal-dialog" role="document">
+                  <div class="modal-content">
+                    <div class="modal-header">
+                      <h5 class="modal-title"
+                        id="coUserLoginDataModalLabel">Adding Co-User</h5>
+                      <button id="closeModal" type="button" class="close"
+                        data-dismiss="modal"
+                        aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                      </button>
+                    </div>
+                    <div class="modal-body m-2">
+                      <!-- <form> -->
+                      <span id="errBx"></span>
+                      <form method="post" id="signupData">
+                        <div class="row">
+                          <div class="col-md-6 col-sm-6">
+                            <label for="userId"
+                              class="form-label">User Id</label>
+                            <input type="text" class="form-control"
+                              id="userId"
+                              name="userId">
+                          </div>
+                          <div class="col-md-6 col-sm-6">
+                            <div class="form-group">
+                              <label for="profileType">User Profile</label>
+                              <select id="profileType" name="profileType"
+                                class="form-control">
+                                <option disabled>Admin</option>
+                                <option selected>Co-Admin</option>
+                              </select>
+                            </div>
+                          </div>
+                          <div class="col-md-12 col-sm-12">
+                            <label for="password"
+                              class="form-label">Password</label>
+                            <input type="text" class="form-control"
+                              id="password"
+                              name="password">
+                          </div>
+                          <button
+                            class="btn btn-primary mt-2 text-center">Create
+                            Account</button>
+                        </form>
+                        <!-- </form> -->
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link text-light" href="#">Settings</a>
+              </li>
+            </ul>
+            <ul class="navbar-nav nav-flex-icons">
+              <li class="nav-item">
+                <a class="nav-link text-light"
+                  href="/signUp">Login/Signup</a>
+              </li>
+            </ul>
           </div>
-        </div>
+        </nav>
       </div>
-      <div class="col-md-1"></div>
-    </div>
-    <footer class="footer bg-body-tertiary text-center text-lg-start">
-      <!-- Grid container -->
-      <div class="container p-4">
-        <!--Grid row-->
-        <div class="row">
-          <!--Grid column-->
-          <div class="col-lg-3 col-md-6 mb-4 mb-md-0">
-            <h5 class="text-uppercase">Links</h5>
-
-            <ul class="list-unstyled mb-0">
-              <li>
-                <a href="#!" class="text-body">Link 1</a>
-              </li>
-              <li>
-                <a href="#!" class="text-body">Link 2</a>
-              </li>
-              <li>
-                <a href="#!" class="text-body">Link 3</a>
-              </li>
-              <li>
-                <a href="#!" class="text-body">Link 4</a>
-              </li>
-            </ul>
+      <div class="row">
+        <div class="col-md-1"></div>
+        <div class="col-md-10">
+          <div class="row h1 ml-2 text-center"><span>Most Trending on my
+              channel</span></div>
+          <div class="row mt-2">
+            <video class="singleVideo" preload="auto" controls>
+              <source src="/static/videos/SampleVideo.mp4"
+                type="video/mp4" />
+              Your browser does not support the video tag.
+            </video>
           </div>
-          <!--Grid column-->
-
-          <!--Grid column-->
-          <div class="col-lg-3 col-md-6 mb-4 mb-md-0">
-            <h5 class="text-uppercase mb-0">Links</h5>
-
-            <ul class="list-unstyled">
-              <li>
-                <a href="#!" class="text-body">Link 1</a>
-              </li>
-              <li>
-                <a href="#!" class="text-body">Link 2</a>
-              </li>
-              <li>
-                <a href="#!" class="text-body">Link 3</a>
-              </li>
-              <li>
-                <a href="#!" class="text-body">Link 4</a>
-              </li>
-            </ul>
+          <div class="row mt-1">
+            <div class="col-md-12 ml-2">
+              name = YoutubeVideo trending on my channel
+              fgjfkjgk
+              jg
+            </div>
           </div>
-          <!--Grid column-->
-
-          <!--Grid column-->
-          <div class="col-lg-3 col-md-6 mb-4 mb-md-0">
-            <h5 class="text-uppercase">Links</h5>
-
-            <ul class="list-unstyled mb-0">
-              <li>
-                <a href="#!" class="text-body">Link 1</a>
-              </li>
-              <li>
-                <a href="#!" class="text-body">Link 2</a>
-              </li>
-              <li>
-                <a href="#!" class="text-body">Link 3</a>
-              </li>
-              <li>
-                <a href="#!" class="text-body">Link 4</a>
-              </li>
-            </ul>
-          </div>
-          <!--Grid column-->
-
-          <!--Grid column-->
-          <div class="col-lg-3 col-md-6 mb-4 mb-md-0">
-            <h5 class="text-uppercase mb-0">Links</h5>
-
-            <ul class="list-unstyled">
-              <li>
-                <a href="#!" class="text-body">Link 1</a>
-              </li>
-              <li>
-                <a href="#!" class="text-body">Link 2</a>
-              </li>
-              <li>
-                <a href="#!" class="text-body">Link 3</a>
-              </li>
-              <li>
-                <a href="#!" class="text-body">Link 4</a>
-              </li>
-            </ul>
-          </div>
-          <!--Grid column-->
         </div>
-        <!--Grid row-->
+        <div class="col-md-1"></div>
       </div>
-      <!-- Grid container -->
+      <footer class="footer bg-body-tertiary text-center text-lg-start">
+        <!-- Grid container -->
+        <div class="container p-4">
+          <!--Grid row-->
+          <div class="row">
+            <!--Grid column-->
+            <div class="col-lg-3 col-md-6 mb-4 mb-md-0">
+              <h5 class="text-uppercase">Links</h5>
 
-      <!-- Copyright -->
-      <div class="text-center p-3"
-        style="background-color: rgba(0, 0, 0, 0.05);">
-        © 2020 Copyright:
-        <a class="text-body"
-          href="#">YoutubeConnector.org</a>
-      </div>
-      <!-- Copyright -->
-    </footer>
-  </body>
+              <ul class="list-unstyled mb-0">
+                <li>
+                  <a href="#!" class="text-body">Link 1</a>
+                </li>
+                <li>
+                  <a href="#!" class="text-body">Link 2</a>
+                </li>
+                <li>
+                  <a href="#!" class="text-body">Link 3</a>
+                </li>
+                <li>
+                  <a href="#!" class="text-body">Link 4</a>
+                </li>
+              </ul>
+            </div>
+            <!--Grid column-->
 
-</html>
+            <!--Grid column-->
+            <div class="col-lg-3 col-md-6 mb-4 mb-md-0">
+              <h5 class="text-uppercase mb-0">Links</h5>
+
+              <ul class="list-unstyled">
+                <li>
+                  <a href="#!" class="text-body">Link 1</a>
+                </li>
+                <li>
+                  <a href="#!" class="text-body">Link 2</a>
+                </li>
+                <li>
+                  <a href="#!" class="text-body">Link 3</a>
+                </li>
+                <li>
+                  <a href="#!" class="text-body">Link 4</a>
+                </li>
+              </ul>
+            </div>
+            <!--Grid column-->
+
+            <!--Grid column-->
+            <div class="col-lg-3 col-md-6 mb-4 mb-md-0">
+              <h5 class="text-uppercase">Links</h5>
+
+              <ul class="list-unstyled mb-0">
+                <li>
+                  <a href="#!" class="text-body">Link 1</a>
+                </li>
+                <li>
+                  <a href="#!" class="text-body">Link 2</a>
+                </li>
+                <li>
+                  <a href="#!" class="text-body">Link 3</a>
+                </li>
+                <li>
+                  <a href="#!" class="text-body">Link 4</a>
+                </li>
+              </ul>
+            </div>
+            <!--Grid column-->
+
+            <!--Grid column-->
+            <div class="col-lg-3 col-md-6 mb-4 mb-md-0">
+              <h5 class="text-uppercase mb-0">Links</h5>
+
+              <ul class="list-unstyled">
+                <li>
+                  <a href="#!" class="text-body">Link 1</a>
+                </li>
+                <li>
+                  <a href="#!" class="text-body">Link 2</a>
+                </li>
+                <li>
+                  <a href="#!" class="text-body">Link 3</a>
+                </li>
+                <li>
+                  <a href="#!" class="text-body">Link 4</a>
+                </li>
+              </ul>
+            </div>
+            <!--Grid column-->
+          </div>
+          <!--Grid row-->
+        </div>
+        <!-- Grid container -->
+
+        <!-- Copyright -->
+        <div class="text-center p-3"
+          style="background-color: rgba(0, 0, 0, 0.05);">
+          © 2020 Copyright:
+          <a class="text-body"
+            href="#">YoutubeConnector.org</a>
+        </div>
+        <!-- Copyright -->
+      </footer>
+      <script>
+        var ErrBox = document.getElementById("errBx") ;
+        var form = document.getElementById("signupData");
+        form.addEventListener("submit", function(event){
+          event.preventDefault();
+          if( validateData() ){
+            processOnServer() ;
+          }else {
+            return false ;
+          }
+        })
+        // function createAccount(){
+        //   if( validateData() ){
+        //     processOnServer() ;
+        //   }else {
+        //     return false ;
+        //   }
+        // }
+        function validateData(){
+          var uid = document.getElementById("userId").value ; 
+          var profileType = document.getElementById("profileType").value ;
+          var pwd = document.getElementById("password").value ;          
+          if( uid.trim() === '' ){
+            ErrBox.innerText = "User Id field is empty." ;
+            return false ;
+          }
+          if( profileType.trim() === '' ){
+            ErrBox.innerText = "Profile type field is empty." ;
+            return false; 
+          }
+          if( pwd.length <= 6 ){
+            ErrBox.innerText = "Password doent meet the requirement" ;
+            return false ; 
+          }
+          return true ;
+        }
+        function processOnServer(){
+            var formData = new FormData(form);
+            fetch("/SignupData", {
+                method: "POST",        
+                body: formData
+            })
+            .then(response=>{
+                if( !response.ok ){
+                    return response.text().then(errorMessage => {
+                        throw new Error(errorMessage);
+                    });
+                }
+                return response.text()
+            })
+            .then(data=>{
+                console.log(data)
+                ErrBox.innerText = data ;
+            })
+            .catch(error=>{
+                alert(error.message )
+                ErrBox.innerText = error.message ;
+            })
+        }
+      </script>
+      <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+      <script
+        src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+      <script
+        src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+    </body>
+  </html>

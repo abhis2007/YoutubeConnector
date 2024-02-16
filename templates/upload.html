@@ -288,12 +288,24 @@
         </div>
         <div class="col-md-5 col-lg-5">
             <span id="err"></span>
-            <!-- action="/UploadVideoOnStorageServer" method="POST" -->
-            <form id="fileInput" enctype="multipart/form-data"
-                accept=".mp4|video/*">
-                <input type="file" name="userFile" />
-                <input type="submit" value="Upload" />
-            </form>
+            <div class="row">
+                <!-- action="/UploadVideoOnStorageServer" method="POST" -->
+                <div class="col-md-6 col-sm-6 col-lg-6 mb-2">
+                    <form id="fileInput" enctype="multipart/form-data"
+                        accept=".mp4|video/*">
+                        <input type="file" name="userFile" />
+                        <!-- <input type="submit" value="Upload" /> -->
+                    </form>
+                </div>
+                <div class="col-sm-5 col-lg-5 col-md-5 mt-4 pr-1">
+                    <label for="userType">Select task Assignee</label>
+                    <select id="taskAssignee" class="form-control">
+                        {{range .}}
+                        <option selected>{{.}}</option>
+                        {{end}}
+                    </select>
+                </div>
+            </div>
             <video class="singleVideo" width="auto" preload="auto"
                 controls>
                 <source id="lastVideo" src="/static/videos/SampleVideo.mp4"
@@ -322,31 +334,31 @@
             updateCount() ; 
             synchronizeTheScreen("none") ; //initially it is make for kids as well.
             var err_b = document.getElementById("err") ;
-            fileInput.addEventListener('change', function(event){
-                var formData = new FormData(fileInput);
-                fetch("/UploadVideoOnStorageServer", {
-                    method : "POST",
-                    body : formData
-                })
-                .then(response=>{
-                    if( !response.ok ){
-                        return response.text().then(errorMessage => {
-                            alert(errorMessage)
-							throw new Error(errorMessage);
-						});
-                    }
-                    return response.text
-                })
-                .then(data=>{
-                    console.log(data)
-                })
-                .catch(error=>{
-                    err_b.innerText = error.message ;
-                    console.log(error)
-                    console.error(error);
+            // fileInput.addEventListener('change', function(event){
+            //     var formData = new FormData(fileInput);
+            //     fetch("/UploadVideoOnStorageServer", {
+            //         method : "POST",
+            //         body : formData
+            //     })
+            //     .then(response=>{
+            //         if( !response.ok ){
+            //             return response.text().then(errorMessage => {
+            //                 alert(errorMessage)
+			// 				throw new Error(errorMessage);
+			// 			});
+            //         }
+            //         return response.text
+            //     })
+            //     .then(data=>{
+            //         console.log(data)
+            //     })
+            //     .catch(error=>{
+            //         err_b.innerText = error.message ;
+            //         console.log(error)
+            //         console.error(error);
 
-                })
-            }) ;
+            //     })
+            // }) ;
 
             audience.addEventListener('change', function(event) {
                 if (event.target.value === madeForKid) {
@@ -430,8 +442,7 @@
                 alert(tags);
 
                 var formData = document.forms["uploadDetails"] ;
-
-
+                var userId = document.getElementById("taskAssignee").value
                 var xmlFormData = {
                     title : formData["title"].value,
                     description : formData["description"].value,
@@ -439,9 +450,11 @@
                     audience : formData["audience"].value,
                     ageRestrictions : formData["ageRestrictions"].value,
                     tagInput : tags,
-                    privacy : formData["privacy"].value
+                    privacy : formData["privacy"].value, 
+                    coUserId : userId
                 };
-                alert( JSON.stringify(xmlFormData))
+                alert("upload.html")
+                alert(xmlFormData)
                 fetch("/fetchAndUploadVideo", {
                     method : "POST",
                     headers : {

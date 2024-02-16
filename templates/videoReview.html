@@ -1,0 +1,395 @@
+<html>
+    <head>
+        <link
+            href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+            rel="stylesheet"
+            integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN"
+            crossorigin="anonymous">
+        <script
+            src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
+            integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL"
+            crossorigin="anonymous"></script>
+        <link rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title></title>
+        <style>
+            #tagContainer {
+            display: flex; /* display: flex - states that child content should be coming into the same row, and other property like flex-direction
+            and flex-wrap give other options.*/
+            flex-wrap:wrap; /*Not required now.*/
+            /* flex-direction: row-reverse; */
+            margin-bottom: 10px;
+        }
+        .tag {
+            background-color: rgb(151, 146, 146);
+            color: #fff;
+            padding: 8px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            margin-right: 8px;
+        }
+        .tag:hover{
+            background-color: rgb(85, 82, 82);
+        }
+
+        .tag:not(:last-child)::after {
+            
+            margin-right: 8px;
+        }
+
+        .tag-remove {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: black; /* Red background color */
+            color: #fff;
+            border-radius: 50%;
+            cursor: pointer;
+            margin-left: 4px;
+            width: 20px;
+            height: 20px;
+            font-size: 12px;
+        }
+
+            .test{
+                display: flex;
+                margin-bottom: 5px;
+            
+            }
+            .test dt {
+                flex: 0 0 150px; /* Fixed width for key */
+                margin-right: 20px;
+            }
+
+            .test dd {
+                flex: 1
+                
+            }
+            .row.no-gutter {
+                margin-left: 0;
+            }
+                
+            .row.no-gutter > div[class*="col-"] {
+                padding-left: 0;
+            }
+            
+            dd, dt {
+                display: inline;
+                margin: 0;
+            }
+            #editIcon{
+                margin-left: 2px;
+            } #propertyName{
+                font-family:'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif ;  
+                /* color: aliceblue; */
+                padding-bottom:20px;
+                padding-left: 20px;
+            }
+            #dropdown{
+                /* display: none; */
+            }
+      i{
+        margin-left: 10px;
+      }
+      .singleVideo {
+        border-radius: 20px; /* Adjust the value as needed for the desired level of rounding */
+        display: block;
+        margin: 0 auto; /* Center the video */
+        margin-top: 2px;
+        padding-right: 2px;
+        max-width: 100%; /* Ensure the video doesn't exceed its container width */
+        height: auto; 
+    }
+
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="row">
+                <div class="col-sm-8 col-md-8 col-lg-8">
+                    <div class="row no-gutter">
+                        {{range $index, $element := .Properties}}
+                        {{if ne .Name "Path" }}
+                        <dl class="test">
+
+                            <dt id="propertyName{{$index}}">{{.Name}}</dt>
+                            <dd
+                                id="propertyValue{{$index}}">{{.Value}}</dd>
+                            <dd><i
+                                    id="editIcon{{$index}}"
+                                    class="fa fa-edit"></i></dd>
+
+                            <select id="dropdown{{$index}}"
+                                class="form-control">
+                                {{range .StringArray}}
+                                <option>{{.}}</option>
+                                {{end}}
+                            </select>
+
+                            <input type="text" class="form-control"
+                                id="textinp{{$index}}">
+                            {{if eq $index 5 }}
+                            <div id="tagContainer"></div>
+                            <input class="form-control" type="text"
+                                id="tagInput">
+                            {{end}}
+                        </dl>
+                        {{end}}
+                        {{end}}
+                    </div>
+                    <div class="text-center">
+                        <button id="uploadBtn" type="button"
+                            class="btn btn-success">Request For
+                            Approval</button>
+                    </div>
+
+                </div>
+                <div class="col-sm-3 col-md-3 col-lg-3">
+                    <form id="fileInput" enctype="multipart/form-data"
+                        accept=".mp4|video/*">
+                        <input type="file" name="userFile" />
+                        <!-- <input type="submit" value="Upload" /> -->
+                    </form>
+                    {{range $index, $element := .Properties}}
+                    {{if eq .Name "Path" }}
+                    <video class="singleVideo" width="auto" preload="auto"
+                        controls>
+                        <source id="lastVideo" src="{{.Value}}"
+                            type="video/mp4" />
+                        Your browser does not support the video tag.
+                    </video>
+                    {{end}}
+                    {{end}}
+                </div>
+
+            </div>
+        </div>
+        <script>
+            const tags = [];
+            var mxLimit = 100 ;
+            var utilizedcount = 0 ;
+            const tagInput = document.getElementById('tagInput');
+            const tagContainer = document.getElementById('tagContainer');
+            synchronizeScreen("tagInput", "none")
+            tagInput.placeholder="Use Comma or Enter to seperate the multple tags"
+            const uploadButton = document.getElementById("uploadBtn") ;
+            var Title, Description, Category, Audience, AgeRestrictions, TagInput, Privacy; 
+            const notMadeForKid = "No, it's not 'Made for Kids'";
+            var fileInput = document.getElementById('fileInput');  
+            uploadButton.addEventListener('click', function() {
+                alert("clicked")
+                getTagValues() ;
+                alert(tags);
+                for(var i=0; i<7; i++){
+                    var data = document.getElementById("propertyValue" + i).innerText
+                    if( i == 0 ) Title = data ;
+                    if( i == 1 ) Description = data ;
+                    if( i == 2 ) Category = data ;
+                    if( i == 3 ) Audience = data ;
+                    if( i == 4 ) AgeRestrictions = data ;
+                    if( i == 5 ) TagInput = tags ; 
+                    if( i == 6 ) Privacy = data
+                }
+                alert(TagInput)
+                //console.log(Title, Description, Category, Audience, AgeRestrictions, TagInput, Privacy)
+                //var formdata = new FormData() ;
+                var formdata = new FormData(fileInput);                
+                alert("set the form successfully")
+                
+                formdata.append('title', Title) ;                
+                formdata.append('description', Description) ;    
+                formdata.append('category', Category,) ;  
+                formdata.append('audience', Audience,) ;  
+                formdata.append('ageRestrictions', AgeRestrictions,) ;  
+                formdata.append('tagInput', TagInput,) ;  
+                formdata.append('privacy', Privacy) ; 
+
+               
+                fetch("/updateTable", {
+                    method : "POST",
+                    body : formdata
+                })
+                .then(response=>response.json())
+                .then(data=>{
+                    alert(data)
+                    console.log(data)
+                })
+                .catch(error => console.error("Error:", error));
+
+            });
+
+            function synchronizeScreen(objectId, displayType){
+                document.getElementById(objectId).style.display = displayType ;
+            }
+            synchronizeScreen("propertyValue4", "none") ;
+            synchronizeScreen("dropdown4", "none") ;   
+            synchronizeScreen("propertyName4", "none") ;
+            synchronizeScreen("editIcon4", "none") ;             
+            synchronizeScreen("textinp4", "none") ;  
+
+            for(var i=0;i<7; i++){
+                document.getElementById("dropdown" + i).style.display = "none" ;  
+                document.getElementById("textinp" + i).style.display = "none" ;                
+            }
+            
+            document.getElementById("editIcon0").addEventListener('click', function(){
+                synchronizeScreen("propertyValue0", "none")
+                synchronizeScreen("dropdown0", "none")
+                synchronizeScreen("textinp0", "block")
+                synchronizeScreen("editIcon0", "none")
+            });
+            textFocusReset(0) ; 
+
+
+            document.getElementById("editIcon1").addEventListener('click', function(){
+                synchronizeScreen("propertyValue1", "none")
+                synchronizeScreen("dropdown1", "none")
+                synchronizeScreen("textinp1", "block")
+                synchronizeScreen("editIcon1", "none")
+            });
+            textFocusReset(1) ;
+
+            document.getElementById("editIcon2").addEventListener('click', function(){
+                synchronizeScreen("propertyValue2", "none") ;
+                synchronizeScreen("editIcon2", "none") ;
+                synchronizeScreen("dropdown2", "block") ;
+            });
+            dropdownFocusReset(2) ;
+
+            document.getElementById("editIcon3").addEventListener('click', function(){
+                synchronizeScreen("editIcon3", "none") ;
+                synchronizeScreen("propertyValue3", "none") ;
+                synchronizeScreen("dropdown3", "block") ;                
+            });
+            
+            document.getElementById("dropdown3").addEventListener('change', function(){
+                if(document.getElementById("dropdown3").value == notMadeForKid){
+                    synchronizeScreen("editIcon4", "none") ;
+                    synchronizeScreen("propertyValue4", "none") ;
+                    synchronizeScreen("dropdown4", "block") ;  
+                    synchronizeScreen("propertyName4", "block") ; 
+                }else{
+                    document.getElementById("propertyValue4").innerText = "No, don't restrict my video to viewers over 18 only" ;
+                    synchronizeScreen("editIcon4", "none") ;
+                    synchronizeScreen("dropdown4", "none") ;  
+                    synchronizeScreen("propertyName4", "none") ; 
+                    synchronizeScreen("propertyValue4", "none") ;
+                }
+            })
+            dropdownFocusReset(3) ;
+
+            document.getElementById("editIcon4").addEventListener('click', function(){
+                synchronizeScreen("editIcon4", "none") ;
+                synchronizeScreen("propertyValue4", "none") ;
+                synchronizeScreen("dropdown4", "block") ;
+            });
+            dropdownFocusReset(4) ;
+            
+
+            document.getElementById("editIcon5").addEventListener('click', function(){
+                synchronizeScreen("editIcon5", "none")
+                synchronizeScreen("dropdown5", "none")
+                synchronizeScreen("propertyValue5", "none")
+                synchronizeScreen("tagInput", "block")
+
+                tagInput.addEventListener('keydown', function(event) {                      
+                    if (event.key === 'Enter' || event.key === ',') {
+                        event.preventDefault(); // Prevents the default behavior (e.g., newline or comma in the input field)
+                        const tagValue = tagInput.value.trim();
+                        if (tagValue) {
+                            if( utilizedcount + tagValue.length > mxLimit ){
+                                alert("Tag character limit reached.");
+                                return ; 
+                            }
+                            utilizedcount += tagValue.length ;
+                            // updateCount() ;
+                            addTag(tagValue);
+                            tagInput.value = '';
+                        }
+                        document.getElementById("tagInput").placeholder="Use Comma or Enter to seperate the multple tags"
+                    }
+                });
+
+                // var tags = []
+                // var tagElements = document.getElementById("propertyValue5")
+                
+                // tagElements.forEach(tagElement => {     
+                //     tags.push(tagElement.textContent.split('✕')[0]) ; 
+                    
+                // });
+                
+            });
+
+            function getTagValues() {
+                const tagElements = document.querySelectorAll('.tag');
+                tagElements.forEach(tagElement => {     
+                    tags.push(tagElement.textContent.split('✕')[0]) ; 
+                    
+                });
+                
+            }
+
+            document.getElementById("editIcon6").addEventListener('click', function(){
+                synchronizeScreen("propertyValue6", "none") ;
+                synchronizeScreen("dropdown6", "block") ;
+                synchronizeScreen("editIcon6", "none") ;
+            });
+            dropdownFocusReset(6) ;
+
+            document.getElementById("editIcon7").addEventListener('click', function(){
+                alert("clicked7")
+            });
+            document.getElementById("editIcon8").addEventListener('click', function(){
+                alert("clicked8")
+            });
+
+            function dropdownFocusReset(index) {
+                var dropDownId = "dropdown"+index, propertyId = "propertyValue" + index, editIcon = "editIcon" + index ;
+                document.getElementById(dropDownId).addEventListener('blur', function() {
+                    synchronizeScreen(propertyId, "block") ;
+                    document.getElementById(propertyId).innerText = document.getElementById(dropDownId).value ;
+                    synchronizeScreen(dropDownId, "none")
+                    synchronizeScreen(editIcon, "block") ; 
+                });
+            }
+
+            function textFocusReset(index, defId="") {
+                var textId = "textinp"+index, propertyId = "propertyValue" + index, editIcon = "editIcon" + index ;
+                document.getElementById(textId).addEventListener('blur', function() {
+                    synchronizeScreen(propertyId, "block") ;
+                    document.getElementById(propertyId).innerText = document.getElementById(textId).value ;
+                    synchronizeScreen(textId, "none")
+                    synchronizeScreen(editIcon, "block") ; 
+                });
+            }
+
+            function addTag(tagValue) {
+                const tagElement = document.createElement('div');
+                tagElement.classList.add('tag');
+                tagElement.textContent = tagValue;
+    
+                const removeButton = document.createElement('span');
+                removeButton.classList.add('tag-remove');
+                removeButton.textContent = '✕';
+
+                tagElement.appendChild(removeButton);
+
+                removeButton.addEventListener('click', function() {
+                    tagContainer.removeChild(tagElement);
+                    utilizedcount -= tagElement.firstChild.textContent.length;
+                    // updateCount() ;
+                });
+    
+                
+                tagContainer.appendChild(tagElement);
+            }
+            
+                   
+            
+        </script>
+    </body>
+</html>

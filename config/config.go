@@ -13,6 +13,7 @@ import (
 	"google.golang.org/api/storage/v1"
 )
 
+var UserRequest string
 var DB *sql.DB // Global variable to hold the *sql.DB instance
 var STATIC_FILE_PATH = "C:\\Users\\AKumar22\\Desktop\\StudyContents\\GoLang\\YoutubeConnector\\static\\videos"
 var VIDEO_PATH2 = "C:\\Users\\AKumar22\\Desktop\\StudyContents\\GoLang\\YoutubeConnector\\testvd.mp4"
@@ -26,7 +27,7 @@ var UTUBE_END_ENDPOINT string = "/youtube/v3/SampleVideo"
 // var UPLOAD_ENDPOINT string = "?part=snippet%2Cstatus"
 var API_Key string = "AIzaSyC_5hvxTsU8vijTreOE5zrwAws9XnCH6is"
 var OAUTH_TOKEN string = "ya29.a0AfB_byDtDOdgo7Dzc_Pg-URblTXa3VSB5j-KAzkFyvmcO3u9PcCA-t3-8mN21irBWaKnUy9Lh444iZorST4x_uj-f0UnrY8lvUunI7vT8bDhnp3mLw0JhQWzJZ0H2FzVr1e8pnwgUcQRnC9GvmRtmgGWIGngg-QnwsAaCgYKAQYSARESFQHGX2MiX1UfikBfsVQooD-4dNVW5g0170"
-var OAUTH_TOKEN_KR8799 string = "ya29.a0AfB_byCv-BmAK_FyYoVCKA9HwxsY2plLx6YcbmjNnkmQU2PWlVS6QzBVJYR7yno_hVdlGZBIRF1estnb6Z74NXvleqw--m1X6PBoHSZH4Au87jtJNp-pUyVCQ5Vu7rKKqVgPD5ddhIkbxFYUbUXMyahZq-ubOFWArspYaCgYKARISARASFQHGX2MiinTrcahbuysTGBTPd0d7vg0171"
+var OAUTH_TOKEN_KR8799 string = "ya29.a0AfB_byA7J4Eti-ZDHu9d07Li9_5TFXksjiG1t7zTXXGoHF-uySBPAsRwA2qYW4cxpMQ1pqtMXHyt0k08hu-g6jkRpQZc4I3t96-dSbzWamuqPQD1rG6EPuA80vr8UN1MqtOWsogOcjKIz8RZCdgEw4Mp6EnHQQLwwCQaCgYKAQkSARESFQHGX2MifhGnmp1WEphCvUulDZy64Q0170"
 var OAUTH_TOKEN_KR4DRI string = "ya29.a0AfB_byAMUjYzuFfeSjAOttAq9bsmkGldvKgjHVv5eJIQtkbfeCGyHY707MQAifHoPTpdB9HBuA_rKcEUbTaScEPMHPUz2sV2hndGAMM_nJ0qV_b2_k6_2i0B-Z-O8UgO_KmLqU_a_52bXFYcYaRbgGHvaRcw8Ehk77xnaCgYKAcMSARESFQHGX2Mik_rcjhZTiilJZ94HNQaFfA0171"
 var VIDEO_PATH string = "C:\\Users\\AKumar22\\Desktop\\StudyContents\\GoLang\\SampleVideo.mp4"
 var POST_METHOD = "POST"
@@ -38,6 +39,11 @@ var ServiceAccountPath = "C:\\Users\\AKumar22\\Desktop\\StudyContents\\GoLang\\Y
 var BUCKET_NAME = "ytc-media-storage"
 var UPLOAD_API_FILESYTEM = "https://storage.googleapis.com/upload/storage/v1/b/" + BUCKET_NAME + "/o?uploadType=media"
 
+var EditStatus struct {
+	Status string
+	//Edit state, Approved State, and Feedback State
+}
+
 func InitConfigurations() {
 	os.Setenv("API_Key", API_Key)
 	fmt.Println("API_Key", os.Getenv("API_Key"))
@@ -48,6 +54,17 @@ func InitConfigurations() {
 	os.Setenv("CLIENT_SECRET", CLIENT_SECRET)
 	fmt.Println("CLIENT_SECRET", os.Getenv("CLIENT_SECRET"))
 }
+
+// type Session struct {
+// 	UserId string
+// 	Expiry time.Time
+// }
+
+// var Sessions = map[string]Session{}
+
+// func (s Session) isExpired() bool {
+// 	return s.Expiry.Before(time.Now())
+// }
 
 /*
 snippet.title
@@ -84,6 +101,37 @@ type ServiceAccount struct {
 	PrivateKey  string `json:"private_key"`
 	ClientEmail string `json:"client_email"`
 }
+
+// func AuthenticateUser(w http.ResponseWriter, r *http.Request) int {
+// 	fmt.Println("Authentication called")
+// 	m_cookie, err := r.Cookie("session_token")
+// 	if err != nil {
+// 		if err == http.ErrNoCookie {
+// 			fmt.Println("Coockie not found")
+// 			http.Error(w, "Coockie not found", http.StatusUnauthorized)
+// 			return http.StatusUnauthorized
+// 		}
+// 		fmt.Println("bad request")
+// 		http.Error(w, "Bad request", http.StatusBadRequest)
+// 		return http.StatusBadRequest
+// 	}
+// 	sessionToken := m_cookie.Value
+// 	userSession, ok := Sessions[sessionToken]
+
+// 	if !ok {
+// 		fmt.Println("Token not found in the map")
+// 		http.Error(w, "Token not found in the map", http.StatusUnauthorized)
+// 		return http.StatusUnauthorized
+// 	}
+// 	if userSession.isExpired() {
+// 		delete(Sessions, sessionToken)
+// 		fmt.Println("Token expired")
+// 		http.Error(w, "Token expired", http.StatusUnauthorized)
+// 		return http.StatusUnauthorized
+// 	}
+// 	fmt.Println("Is successful")
+// 	return http.StatusOK
+// }
 
 func readFile(path string) ([]byte, error) {
 	content, err := os.ReadFile(path)
@@ -123,7 +171,9 @@ func LoadServiceAccount(path string) (*ServiceAccount, error) {
 	}
 	return &tokenConfig, nil
 }
-var USERID string;
+
+var USERID string
+var LoginUserProfile string
 var ObjectTblCreation = `IF not EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'objectTbl' )
 BEGIN
   CREATE TABLE objectTbl (
@@ -137,12 +187,53 @@ var UserTableCreation = `IF not EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES 
 BEGIN
 	CREATE table userTbl(
 	  userId varchar(50) primary key,
-	  password varchar(50) not null
+	  password varchar(50) not null,
+	  profileType varchar(50) not null
 	)
 END`
 
+var co_adminTablMap = `IF not EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'adminMapTbl')
+BEGIN	
+	CREATE table adminMapTbl(
+		userId varchar(50) primary key,
+		AdminId varchar(50) not null,
+		FOREIGN KEY (AdminId) REFERENCES userTbl(userId)
+	)
+END`
+
+var objUserAndAdminAMpTbl = `IF not EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'objUserAndAdminAMpTbl')
+BEGIN	
+	CREATE table objUserAndAdminAMpTbl(
+		AdminId varchar(50) not null,
+		userId varchar(50) ,
+		objectId varchar(50),
+		objectPathOnServer varchar(50),
+		FOREIGN KEY (AdminId) REFERENCES userTbl(userId),
+		FOREIGN KEY (userId) REFERENCES userTbl(userId)
+	)
+END`
+
+var metadataFiledTbl = `IF not EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'metadataFiledTbl')
+BEGIN	
+	CREATE table metadataFiledTbl(
+		uploadId int IDENTITY(1,1) PRIMARY KEY ,
+		AdminId varchar(50) not null,
+		userId varchar(50) not null,
+		Title varchar(50) not null,
+		Description varchar(50) ,
+		Category varchar(50),
+		Audience varchar(50),
+		AgeRestrictions varchar(50) ,
+		TagInput varchar(50) ,
+		Privacy varchar(50) 
+
+		FOREIGN KEY (AdminId) REFERENCES userTbl(userId),
+		FOREIGN KEY (userId) REFERENCES userTbl(userId)
+	)
+END`
 
 func DbInit() {
+	fmt.Println("Exceuting init db")
 	server := "MF-H59IBOW2THNM"
 	port := 1433
 	user := "sa"
@@ -178,8 +269,22 @@ func DbInit() {
 	if err != nil {
 		log.Fatal(err)
 	}
-}
+	_, err = db.Exec(co_adminTablMap)
+	if err != nil {
+		log.Fatal(err)
+	}
 
+	_, err = db.Exec(objUserAndAdminAMpTbl)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	_, err = db.Exec(metadataFiledTbl)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+}
 
 func GenerateJWTToken() (string, error) {
 	// CREATING SOME WRONG JWT KEY HENCE USED THE CLIENT LIBRARY
@@ -239,3 +344,11 @@ func GenerateJWTToken() (string, error) {
 
 }
 
+type YoutubeResponse struct {
+	Kind    string `json:"kind"`
+	Etag    string `json:"etag"`
+	Id      string `json:"id"`
+	Snippet struct {
+		Title string `json:"title"`
+	} `json:"snippet"`
+}

@@ -15,6 +15,16 @@ func RouterConfiguration(router *mux.Router) {
 	router.HandleFunc("/upload", controller.UploadVideo).Methods("GET")
 	router.HandleFunc("/fetchAndUploadVideo", controller.FetchAndUploadVideo).Methods("POST")
 	router.HandleFunc("/UploadVideoOnStorageServer", controller.UploadVideoOnStorageServer).Methods("POST")
+	router.HandleFunc("/login", controller.SignIn)
+	router.HandleFunc("/users", controller.AllUsers)
+	router.HandleFunc("/user", controller.HandleUserDetails)
+
+	router.HandleFunc("/updateTable", controller.UpdateTable)
+
+	// router.HandleFunc("/parseFile", controller.RenderVideoReviewTemplate)
+
+	router.HandleFunc("/parseFile", controller.Test)
+	router.HandleFunc("/assignTask", controller.AssignTaskToCoUser)
 
 	// router.HandleFunc("/getVideoDetails", controller.GetVideoDetails).Methods("GET")
 	// router.HandleFunc("/uploadVideo", controller.UploadVideo).Methods("POST")

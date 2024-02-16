@@ -44,6 +44,7 @@ var templates *template.Template
 // executes automstically
 func init() {
 	templates = template.Must(template.ParseGlob(filepath.Join("templates", "*.html")))
+	config.DbInit()
 }
 
 // uploadVideo is more understable code base
@@ -85,7 +86,7 @@ func main() {
 		//createAuthToken()
 		//downloadObject()
 		//test2("")
-		config.DbInit()
+
 		//insertdata("to_tony_20240202_234305")
 		//deleteObjectOnGCS()
 		fmt.Println("Server started at port : 8080")
