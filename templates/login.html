@@ -87,13 +87,13 @@
                         throw new Error(errorMessage);
                     });
                 }
-                return response.text
+                return response.text();
             })
             .then(data=>{
                 console.log(data)
+                errBx.innerText = data ;
             })
             .catch(error=>{
-                alert(error.message )
                 errBx.innerText = error.message ;                
             })
         }
