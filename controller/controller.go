@@ -16,8 +16,18 @@ import (
 	"time"
 
 	"github.com/abhis2007/YOUTUECONNECTOR/config"
+	"github.com/abhis2007/YOUTUECONNECTOR/models"
 	"github.com/google/uuid"
 )
+
+var App *config.AppConfig
+
+// Sets the config for the controller package
+func NewTemplate(a *config.AppConfig) {
+	App = a
+}
+
+var TemplateCache = map[string]*template.Template{}
 
 type Session struct {
 	UserId string
@@ -33,11 +43,11 @@ type Credential struct {
 
 func AllUsers(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("reached")
-	parseTemplate, err := template.ParseFiles("./templates/users.html")
-	if err != nil {
-		log.Fatal(err)
-		return
-	}
+	// parseTemplate, err := template.ParseFiles("./templates/users.html", "./templates/base.layout.html")
+	// if err != nil {
+	// 	log.Fatal(err)
+	// 	return
+	// }
 
 	db := config.DB
 	var sqlQuery string
@@ -63,12 +73,33 @@ func AllUsers(w http.ResponseWriter, r *http.Request) {
 		}
 		userIds = append(userIds, userId)
 	}
+	// type datas struct {
+	// 	UserIds     []string
+	// 	ProfileType string
+	// }
 
-	err = parseTemplate.Execute(w, userIds)
-	if err != nil {
-		log.Fatal(err)
-		return
+	// data := datas{
+	// 	UserIds:     userIds,
+	// 	ProfileType: config.LoginUserProfile,
+	// }
+
+	// err = parseTemplate.Execute(w, data)
+	// if err != nil {
+	// 	log.Fatal(err)
+	// 	return
+	// }
+
+	data := models.TemplateData{
+		StringMap: map[string]string{
+			"ProfileType": config.LoginUserProfile,
+		},
+		CustomData: map[string]interface{}{
+			"userIds": userIds,
+		},
 	}
+
+	template := RenderTemplate(w, "users.page.html")
+	template.Execute(w, data)
 }
 
 func AssignTaskToCoUser(w http.ResponseWriter, r *http.Request) {
@@ -107,7 +138,7 @@ func RenderVideoReviewTemplate(w http.ResponseWriter, r *http.Request) {
 		var Userid, adminId, Title, Description, Category, Audience, AgeRestrictions, TagInput, Privacy string
 		err := row.Scan(&Userid, &adminId, &Title, &Description, &Category, &Audience, &AgeRestrictions, &TagInput, &Privacy)
 		fmt.Println(err)
-		fmt.Println(Title)
+		// fmt.Println(Title)
 		//var nilArr []string
 		var categoryArr []string
 		for i := 0; i <= 10; i++ {
@@ -134,10 +165,10 @@ func RenderVideoReviewTemplate(w http.ResponseWriter, r *http.Request) {
 
 	// fmt.Println(propertyKeyValues)
 
-	propertyKeyValueArr := propertyAndKeyvalue{propertyKeyValues}
-	propertyKeyValueArr = propertyKeyValueArr
+	// propertyKeyValueArr := propertyAndKeyvalue{propertyKeyValues}
+	// propertyKeyValueArr = propertyKeyValueArr
 
-	parseTemplate, err := template.ParseFiles("./templates/videoReview.html")
+	parseTemplate, err := template.ParseFiles("./templates/videoReview.html", "./templates/base.layout.html")
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -152,9 +183,10 @@ type Property struct {
 	StringArray []string
 }
 
-type Data struct {
-	Properties []Property
-}
+// type Data struct {
+// 	Properties  []Property
+// 	ProfileType string
+// }
 
 var categoryList []string
 
@@ -175,7 +207,7 @@ func Test(w http.ResponseWriter, r *http.Request) {
 	}
 
 	query := "select * from metadataFiledTbl where userId = '" + nonAdminUserId + "' AND AdminId = '" + AdminUserId + "'"
-	fmt.Println(query)
+	fmt.Println("query")
 	db := config.DB
 	row, err := db.Query(query)
 	if err != nil {
@@ -214,15 +246,29 @@ func Test(w http.ResponseWriter, r *http.Request) {
 		}
 
 	}
+	// data := Data{
+	// 	Properties:  properties,
+	// 	ProfileType: config.LoginUserProfile,
+	// }
 
-	data := Data{Properties: properties}
-	fmt.Println(data)
-	parseTemplate, err := template.ParseFiles("./templates/videoReview.html")
-	if err != nil {
-		fmt.Println(err)
+	data := models.TemplateData{
+		CustomData: map[string]interface{}{
+			"properties": properties,
+		},
+		StringMap: map[string]string{
+			"ProfileType": config.LoginUserProfile,
+		},
 	}
+	fmt.Println(data)
+	// parseTemplate, err := template.ParseFiles("./templates/videoReview.html", "./templates/base.layout.html")
+	// if err != nil {
+	// 	fmt.Println(err)
+	// }
 
-	parseTemplate.Execute(w, data)
+	// parseTemplate.Execute(w, data)
+
+	template := RenderTemplate(w, "videoReview.page.html")
+	template.Execute(w, data)
 
 }
 
@@ -564,7 +610,9 @@ func SignupData(w http.ResponseWriter, r *http.Request) {
 }
 
 func SignUp(w http.ResponseWriter, r *http.Request) {
-	parseTemplate, err := template.ParseFiles("./templates/signup.html")
+	var err error
+	parseTemplate := RenderTemplate(w, "signup.page.html")
+	//parseTemplate, err := template.ParseFiles("./templates/signup.html", "./templates/base.layout.html")
 	if err != nil {
 		log.Fatal(err)
 		return
@@ -578,13 +626,16 @@ func SignUp(w http.ResponseWriter, r *http.Request) {
 }
 
 func Login(w http.ResponseWriter, r *http.Request) {
-	parseTemplate, err := template.ParseFiles("./templates/login.html")
-	if err != nil {
-		log.Fatal(err)
-		return
+	var err error
+	parseTemplate := RenderTemplate(w, "login.page.html")
+
+	templatedata := models.TemplateData{
+		StringMap: map[string]string{
+			"ProfileType": config.LoginUserProfile,
+		},
 	}
 
-	err = parseTemplate.Execute(w, nil)
+	err = parseTemplate.Execute(w, &templatedata)
 	if err != nil {
 		log.Fatal(err)
 		return
@@ -593,13 +644,22 @@ func Login(w http.ResponseWriter, r *http.Request) {
 
 func Index(w http.ResponseWriter, r *http.Request) {
 
-	parsed, err := template.ParseFiles("./templates/index.html")
+	parsed := RenderTemplate(w, "index.page.html")
+
+	templatedata := models.TemplateData{
+		StringMap: map[string]string{
+			"ProfileType": config.LoginUserProfile,
+		},
+	}
+
+	buff := new(bytes.Buffer)
+	err := parsed.Execute(buff, &templatedata)
+
 	if err != nil {
 		log.Fatal(err)
-		return
 	}
-	profile := config.LoginUserProfile
-	err = parsed.Execute(w, profile)
+
+	_, err = buff.WriteTo(w)
 	if err != nil {
 		log.Fatal(err)
 		return
@@ -607,7 +667,7 @@ func Index(w http.ResponseWriter, r *http.Request) {
 }
 
 func UploadVideo(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("Upload Endpoint - Post request")
+	fmt.Println("> running Upload")
 	query := "select userId from adminMapTbl where AdminId = '" + config.USERID + "'"
 	fmt.Println(query)
 
@@ -627,17 +687,38 @@ func UploadVideo(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	fmt.Println(userIds)
-	parsed, err := template.ParseFiles("./templates/upload.html")
-	if err != nil {
-		log.Fatal(err)
-		return
+	// type Data struct {
+	// 	UserIds     []string
+	// 	ProfileType string
+	// }
+
+	// data := Data{
+	// 	UserIds:     userIds,
+	// 	ProfileType: config.LoginUserProfile,
+	// }
+	// parsed, err := template.ParseFiles("./templates/upload.html", "./templates/base.layout.html")
+	// if err != nil {
+	// 	log.Fatal(err)
+	// 	return
+	// }
+
+	// err = parsed.Execute(w, data)
+	// if err != nil {
+	// 	log.Fatal(err)
+	// 	return
+	// }
+
+	template := RenderTemplate(w, "upload.page.html")
+	data := models.TemplateData{
+		CustomData: map[string]interface{}{
+			"UserIds": userIds,
+		},
+		StringMap: map[string]string{
+			"ProfileType": config.LoginUserProfile,
+		},
 	}
 
-	err = parsed.Execute(w, userIds)
-	if err != nil {
-		log.Fatal(err)
-		return
-	}
+	template.Execute(w, data)
 
 }
 
@@ -1195,7 +1276,7 @@ func Videos(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	parsed, err := template.ParseFiles("./templates/videos.html")
+	parsed, err := template.ParseFiles("./templates/videos.html", "./templates/base.layout.html")
 	if err != nil {
 		log.Fatal(err)
 		return
@@ -1217,4 +1298,97 @@ func insertdata(objectid string) {
 	if err != nil {
 		fmt.Println(err)
 	}
+}
+
+func RenderTemplate(resWr http.ResponseWriter, t string) *template.Template {
+
+	var cachedTempalate map[string]*template.Template
+	var err error
+	cachedTempalate = App.TemplateCache
+
+	if App.IsDebugEnviornment {
+		cachedTempalate, err = CreateTemplateCache()
+		if err != nil {
+			fmt.Println("Came")
+			log.Fatal(err)
+		}
+		App.TemplateCache = cachedTempalate
+	} else {
+		log.Println("Using template cache to load the template")
+	}
+
+	template, ok := cachedTempalate[t]
+	if !ok {
+		fmt.Println("Failed to create the cache")
+		//Directly can show the error.
+		//cachedTempalate, err = CreateTemplateCache()
+		if err != nil {
+			log.Fatal("could not get the template from the cache")
+		}
+		//App.TemplateCache = cachedTempalate
+	}
+
+	return template
+}
+
+func CreateTemplateCache_Old(t string) error {
+
+	templates := []string{
+		fmt.Sprintf("./templates/%s", t),
+		"./templates/base.layout.html",
+	}
+
+	//Parse the template
+	parsedTemplae, err := template.ParseFiles(templates...)
+	if err != nil {
+		return err
+	}
+
+	//Add into the Cache
+	TemplateCache[t] = parsedTemplae
+
+	return nil
+}
+
+func CreateTemplateCache() (map[string]*template.Template, error) {
+
+	fmt.Println("Building the template cache.")
+	var templateCache = map[string]*template.Template{}
+
+	pages, err := filepath.Glob("./templates/*.page.html")
+	if err != nil {
+		return templateCache, err
+	} else {
+		fmt.Println("Pages found")
+	}
+
+	layouts, err := filepath.Glob("./templates/*.layout.html")
+	if err != nil {
+		return templateCache, err
+	} else {
+		fmt.Println("layout found")
+	}
+
+	if len(layouts) <= 0 {
+		fmt.Println("layout not found")
+		return templateCache, nil
+	}
+
+	for _, page := range pages {
+
+		fileName := filepath.Base(page)
+		pageTemplate, err := template.New(fileName).ParseFiles(page)
+		if err != nil {
+			return templateCache, err
+		}
+
+		ts, err := pageTemplate.ParseGlob("./templates/*.layout.html")
+		if err != nil {
+			return templateCache, err
+		}
+
+		templateCache[fileName] = ts
+	}
+
+	return templateCache, nil
 }

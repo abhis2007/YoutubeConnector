@@ -13,9 +13,9 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"text/template"
 
 	"github.com/abhis2007/YOUTUECONNECTOR/config"
+	"github.com/abhis2007/YOUTUECONNECTOR/controller"
 	"github.com/abhis2007/YOUTUECONNECTOR/routes"
 	_ "github.com/denisenkom/go-mssqldb"
 	"github.com/gorilla/mux"
@@ -39,11 +39,11 @@ type BodyPayload struct {
 	Status  StatusPayload  `json:"status"`
 }
 
-var templates *template.Template
+//var templates *template.Template
 
-// executes automstically
+// init executes automatically
 func init() {
-	templates = template.Must(template.ParseGlob(filepath.Join("templates", "*.html")))
+	//templates = template.Must(template.ParseGlob(filepath.Join("templates", "*.html")))
 	config.DbInit()
 }
 
@@ -51,6 +51,16 @@ func init() {
 func main() {
 	//http.Handle("/", http.StripPrefix("/videos/", http.FileServer(http.Dir("./videos"))))
 	//log.Fatal(http.ListenAndServe(":8080", http.FileServer(http.Dir("./videos/"))))
+
+	var App config.AppConfig
+	cache, err := controller.CreateTemplateCache()
+	if err != nil {
+		fmt.Println("Failed to create the template cache")
+	}
+	//App.IsDebugEnviornment = true
+	App.TemplateCache = cache
+	App.IsDebugEnviornment = true
+	controller.NewTemplate(&App)
 
 	Snippetdata := SnippetPayload{
 		CategoryId:  "Keyboard, Mouse, MousePad, Laptop, Table",
