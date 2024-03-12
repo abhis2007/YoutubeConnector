@@ -1,0 +1,18 @@
+{{template "base" .}}
+{{define "css" }}
+
+<script></script>
+{{end}}
+
+{{define "content"}}
+<h1>User IDs</h1>
+<ul>
+    {{range (index .CustomData "userIds" )}}
+    <li><a href="/user?id={{.}}">{{.}}</a></li>
+    {{end}}
+</ul>
+{{end}}
+
+{{define "js"}}
+<script></script>
+{{end}}

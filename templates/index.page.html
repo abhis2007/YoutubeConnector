@@ -1,0 +1,104 @@
+{{template "base" .}}
+{{define "css"}}
+<style>
+    .singleVideo{
+      border-radius: 8px;
+      height: 500px;
+    }
+    body{
+      overflow-x: hidden;
+    }
+  </style>
+
+{{end}}
+
+{{define "Title"}}
+<title>Index Page</title>
+{{end}}
+
+{{define "content"}}
+<div class="row">
+  <div class="col-md-1"></div>
+  <div class="col-md-10">
+    <div class="row h1 ml-2 text-center"><span>Most Trending on my
+        channel</span></div>
+    <div class="row mt-2">
+      <video class="singleVideo" preload="auto" controls>
+        <source src="/static/videos/SampleVideo.mp4"
+          type="video/mp4" />
+        Your browser does not support the video tag.
+      </video>
+    </div>
+    <div class="row mt-1">
+      <div class="col-md-12 ml-2">
+        name = YoutubeVideo trending on my channel
+      </div>
+    </div>
+  </div>
+  <div class="col-md-1"></div>
+</div>
+
+{{end}}
+
+{{define "js"}}
+<script>
+    var ErrBox = document.getElementById("errBx") ;
+    var form = document.getElementById("signupData");
+    form.addEventListener("submit", function(event){
+      event.preventDefault();
+      if( validateData() ){
+        processOnServer() ;
+      }else {
+        return false ;
+      }
+    })
+    // function createAccount(){
+    //   if( validateData() ){
+    //     processOnServer() ;
+    //   }else {
+    //     return false ;
+    //   }
+    // }
+    function validateData(){
+      var uid = document.getElementById("userId").value ; 
+      var profileType = document.getElementById("profileType").value ;
+      var pwd = document.getElementById("password").value ;          
+      if( uid.trim() === '' ){
+        ErrBox.innerText = "User Id field is empty." ;
+        return false ;
+      }
+      if( profileType.trim() === '' ){
+        ErrBox.innerText = "Profile type field is empty." ;
+        return false; 
+      }
+      if( pwd.length <= 6 ){
+        ErrBox.innerText = "Password doent meet the requirement" ;
+        return false ; 
+      }
+      return true ;
+    }
+    function processOnServer(){
+        var formData = new FormData(form);
+        fetch("/SignupData", {
+            method: "POST",        
+            body: formData
+        })
+        .then(response=>{
+            if( !response.ok ){
+                return response.text().then(errorMessage => {
+                    throw new Error(errorMessage);
+                });
+            }
+            return response.text()
+        })
+        .then(data=>{
+            console.log(data)
+            ErrBox.innerText = data ;
+        })
+        .catch(error=>{
+            alert(error.message )
+            ErrBox.innerText = error.message ;
+        })
+    }
+  </script>
+{{end}}
